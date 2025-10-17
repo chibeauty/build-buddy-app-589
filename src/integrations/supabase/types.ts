@@ -14,16 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          last_study_date: string | null
+          learning_style: string | null
+          study_streak: number
+          updated_at: string
+          xp_points: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          last_study_date?: string | null
+          learning_style?: string | null
+          study_streak?: number
+          updated_at?: string
+          xp_points?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          last_study_date?: string | null
+          learning_style?: string | null
+          study_streak?: number
+          updated_at?: string
+          xp_points?: number
+        }
+        Relationships: []
+      }
+      user_goals: {
+        Row: {
+          created_at: string
+          goal_description: string | null
+          goal_type: string
+          id: string
+          is_completed: boolean
+          target_date: string | null
+          time_commitment: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_description?: string | null
+          goal_type: string
+          id?: string
+          is_completed?: boolean
+          target_date?: string | null
+          time_commitment?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_description?: string | null
+          goal_type?: string
+          id?: string
+          is_completed?: boolean
+          target_date?: string | null
+          time_commitment?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          achievement_notifications: boolean
+          community_updates: boolean
+          created_at: string
+          id: string
+          reminder_time: string | null
+          study_reminders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_notifications?: boolean
+          community_updates?: boolean
+          created_at?: string
+          id?: string
+          reminder_time?: string | null
+          study_reminders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_notifications?: boolean
+          community_updates?: boolean
+          created_at?: string
+          id?: string
+          reminder_time?: string | null
+          study_reminders?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +291,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
