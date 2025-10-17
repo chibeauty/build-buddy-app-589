@@ -1,0 +1,308 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PasswordStrength } from '@/components/auth/PasswordStrength';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signUpSchema, signInSchema, forgotPasswordSchema, SignUpInput, SignInInput, ForgotPasswordInput } from '@/lib/validations';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Eye, EyeOff } from 'lucide-react';
+
+export default function Auth() {
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signUp, signIn, resetPassword } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const signUpForm = useForm<SignUpInput>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      agreeToTerms: false,
+    },
+  });
+
+  const signInForm = useForm<SignInInput>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const handleSignUp = async (data: SignUpInput) => {
+    setLoading(true);
+    const { error } = await signUp(data.email, data.password, data.fullName);
+    setLoading(false);
+
+    if (error) {
+      if (error.message.includes('already registered')) {
+        toast({
+          title: 'Account already exists',
+          description: 'Please sign in or use a different email.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    } else {
+      toast({
+        title: 'Success!',
+        description: 'Please check your email to confirm your account.',
+      });
+      navigate('/onboarding/welcome');
+    }
+  };
+
+  const handleSignIn = async (data: SignInInput) => {
+    setLoading(true);
+    const { error } = await signIn(data.email, data.password);
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Invalid email or password.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleForgotPassword = async (data: ForgotPasswordInput) => {
+    setLoading(true);
+    const { error } = await resetPassword(data.email);
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success!',
+        description: 'Password reset email sent. Please check your inbox.',
+      });
+      setActiveTab('signin');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-2xl font-bold text-primary-foreground">E</span>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold">Welcome to ExHub</CardTitle>
+          <CardDescription>Your AI-powered learning companion</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="signin" className="space-y-4">
+              <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
+                  <Input
+                    id="signin-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    {...signInForm.register('email')}
+                  />
+                  {signInForm.formState.errors.email && (
+                    <p className="text-sm text-destructive">{signInForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signin-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      {...signInForm.register('password')}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  {signInForm.formState.errors.password && (
+                    <p className="text-sm text-destructive">{signInForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-sm"
+                  onClick={() => setActiveTab('forgot')}
+                >
+                  Forgot your password?
+                </Button>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <LoadingSpinner /> : 'Sign In'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup" className="space-y-4">
+              <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="John Doe"
+                    {...signUpForm.register('fullName')}
+                  />
+                  {signUpForm.formState.errors.fullName && (
+                    <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    {...signUpForm.register('email')}
+                  />
+                  {signUpForm.formState.errors.email && (
+                    <p className="text-sm text-destructive">{signUpForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      {...signUpForm.register('password')}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <PasswordStrength password={signUpForm.watch('password')} />
+                  {signUpForm.formState.errors.password && (
+                    <p className="text-sm text-destructive">{signUpForm.formState.errors.password.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm">Confirm Password</Label>
+                  <Input
+                    id="signup-confirm"
+                    type="password"
+                    placeholder="••••••••"
+                    {...signUpForm.register('confirmPassword')}
+                  />
+                  {signUpForm.formState.errors.confirmPassword && (
+                    <p className="text-sm text-destructive">{signUpForm.formState.errors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={signUpForm.watch('agreeToTerms')}
+                    onCheckedChange={(checked) => signUpForm.setValue('agreeToTerms', checked as boolean)}
+                  />
+                  <label htmlFor="terms" className="text-sm leading-none">
+                    I agree to the Terms of Service and Privacy Policy
+                  </label>
+                </div>
+                {signUpForm.formState.errors.agreeToTerms && (
+                  <p className="text-sm text-destructive">{signUpForm.formState.errors.agreeToTerms.message}</p>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <LoadingSpinner /> : 'Create Account'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          {activeTab === 'forgot' && (
+            <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...forgotPasswordForm.register('email')}
+                />
+                {forgotPasswordForm.formState.errors.email && (
+                  <p className="text-sm text-destructive">{forgotPasswordForm.formState.errors.email.message}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <LoadingSpinner /> : 'Send Reset Link'}
+              </Button>
+
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setActiveTab('signin')}
+              >
+                Back to Sign In
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

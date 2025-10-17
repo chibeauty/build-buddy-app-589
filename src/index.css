@@ -35,6 +35,14 @@ All colors MUST be HSL.
     --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
 
+    /* Success: Vibrant Green */
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning: Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
     /* Error: Soft Red #EF4444 */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -84,6 +92,14 @@ All colors MUST be HSL.
     /* Accent: Vibrant Green */
     --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
+
+    /* Success: Vibrant Green */
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning: Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
 
     /* Error */
     --destructive: 0 84% 60%;
