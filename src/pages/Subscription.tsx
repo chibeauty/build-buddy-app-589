@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ interface SubscriptionPlan {
 export default function Subscription() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
@@ -163,9 +165,14 @@ export default function Subscription() {
             Unlock AI-powered learning features and accelerate your educational journey
           </p>
           {currentSubscription && (
-            <Badge variant="secondary" className="text-sm">
-              Current Plan: {currentSubscription.subscription_plans.name}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                Current Plan: {currentSubscription.subscription_plans.name}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={() => navigate('/subscription/manage')}>
+                Manage Subscription
+              </Button>
+            </div>
           )}
           <div className="flex items-center justify-center gap-2">
             <Zap className="h-5 w-5 text-primary" />

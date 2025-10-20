@@ -27,7 +27,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { planId, referralCode } = await req.json();
+    const { planId, referralCode, isUpgrade, currentSubscriptionId } = await req.json();
 
     // Get plan details
     const { data: plan, error: planError } = await supabaseClient
@@ -37,6 +37,33 @@ serve(async (req) => {
       .single();
 
     if (planError) throw planError;
+
+    let finalAmount = plan.price;
+
+    // Calculate prorated amount for upgrades
+    if (isUpgrade && currentSubscriptionId) {
+      const { data: currentSub } = await supabaseClient
+        .from('user_subscriptions')
+        .select('*, subscription_plans(*)')
+        .eq('id', currentSubscriptionId)
+        .single();
+
+      if (currentSub) {
+        const currentPeriodEnd = new Date(currentSub.current_period_end);
+        const now = new Date();
+        const daysRemaining = Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const totalDays = currentSub.subscription_plans.billing_interval === 'monthly' ? 30 : 365;
+        
+        // Calculate unused amount from current plan
+        const unusedAmount = (currentSub.subscription_plans.price / totalDays) * daysRemaining;
+        
+        // Calculate prorated amount for new plan
+        const newPlanProrated = (plan.price / totalDays) * daysRemaining;
+        
+        // Final amount is the difference
+        finalAmount = Math.max(0, newPlanProrated - unusedAmount);
+      }
+    }
 
     // Get user profile for email
     const { data: profile } = await supabaseClient
@@ -59,13 +86,15 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(plan.price * 100), // Paystack expects amount in kobo
+        amount: Math.round(finalAmount * 100), // Paystack expects amount in kobo
         currency: plan.currency,
         metadata: {
           user_id: user.id,
           plan_id: planId,
           referral_code: referralCode || null,
           customer_name: profile?.full_name || 'User',
+          is_upgrade: isUpgrade || false,
+          current_subscription_id: currentSubscriptionId || null,
         },
         callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-payment`,
       }),
@@ -83,13 +112,15 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         paystack_reference: paystackData.data.reference,
-        amount: plan.price,
+        amount: finalAmount,
         currency: plan.currency,
         status: 'pending',
-        transaction_type: 'subscription',
+        transaction_type: isUpgrade ? 'upgrade' : 'subscription',
         metadata: {
           plan_id: planId,
           referral_code: referralCode || null,
+          is_upgrade: isUpgrade || false,
+          current_subscription_id: currentSubscriptionId || null,
         },
       });
 

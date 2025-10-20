@@ -27,7 +27,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { action, subscriptionId } = await req.json();
+    const { action, subscriptionId, newPlanId } = await req.json();
 
     // Get current subscription
     const { data: subscription, error: subError } = await supabaseClient
@@ -69,6 +69,61 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ success: true, message: 'Subscription reactivated successfully' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (action === 'downgrade') {
+      // Schedule downgrade to take effect at end of billing period
+      if (!newPlanId) {
+        throw new Error('New plan ID is required for downgrade');
+      }
+
+      // Store the pending plan change
+      await supabaseClient
+        .from('user_subscriptions')
+        .update({
+          cancel_at_period_end: true,
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq('id', subscriptionId);
+
+      // Store pending plan change in metadata
+      await supabaseClient
+        .from('payment_transactions')
+        .insert({
+          user_id: user.id,
+          subscription_id: subscriptionId,
+          paystack_reference: `downgrade_${subscriptionId}_${Date.now()}`,
+          amount: 0,
+          currency: 'NGN',
+          status: 'pending',
+          transaction_type: 'subscription',
+          metadata: {
+            action: 'downgrade',
+            new_plan_id: newPlanId,
+            scheduled_for: subscription.current_period_end,
+          },
+        });
+
+      console.log('Downgrade scheduled:', subscriptionId, 'to plan:', newPlanId);
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Downgrade scheduled for end of billing period' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else if (action === 'cancel_downgrade') {
+      // Cancel a scheduled downgrade
+      await supabaseClient
+        .from('user_subscriptions')
+        .update({
+          cancel_at_period_end: false,
+          cancelled_at: null,
+        })
+        .eq('id', subscriptionId);
+
+      console.log('Downgrade cancelled:', subscriptionId);
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Downgrade cancelled successfully' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

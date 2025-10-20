@@ -41,6 +41,7 @@ const Notifications = lazy(() => import("./pages/onboarding/Notifications"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Referrals = lazy(() => import("./pages/Referrals"));
+const ManageSubscription = lazy(() => import("./pages/ManageSubscription"));
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => (
                 <Route path="/profile/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+                <Route path="/subscription/manage" element={<ProtectedRoute><ManageSubscription /></ProtectedRoute>} />
                 <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
                 <Route path="/referrals" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
                 <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />

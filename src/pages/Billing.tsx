@@ -182,11 +182,16 @@ export default function Billing() {
                 </div>
               )}
 
-              {!subscription.cancel_at_period_end && (
-                <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
-                  Cancel Subscription
+              <div className="flex gap-2">
+                <Button onClick={() => navigate('/subscription/manage')}>
+                  Manage Plan
                 </Button>
-              )}
+                {!subscription.cancel_at_period_end && (
+                  <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
+                    Cancel Subscription
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
