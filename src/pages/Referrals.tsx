@@ -107,10 +107,34 @@ export default function Referrals() {
     }
   };
 
-  const handleShare = (platform: string) => {
+  const handleShare = async (platform: string) => {
     const link = getReferralLink();
     const text = `Join me on ExHub and we both get 100 AI credits! Use my referral link:`;
     
+    // For WhatsApp, try Web Share API first (works better in preview environments)
+    if (platform === 'whatsapp' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join ExHub',
+          text: text,
+          url: link,
+        });
+        return;
+      } catch (err) {
+        // If share is cancelled or fails, copy to clipboard as fallback
+        try {
+          await navigator.clipboard.writeText(`${text} ${link}`);
+          toast({
+            title: 'Copied to clipboard!',
+            description: 'You can now paste this in WhatsApp',
+          });
+          return;
+        } catch (clipboardErr) {
+          console.error('Share and clipboard both failed:', err, clipboardErr);
+        }
+      }
+    }
+
     const urls: Record<string, string> = {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`,
@@ -119,7 +143,7 @@ export default function Referrals() {
     };
 
     if (urls[platform]) {
-      window.location.href = urls[platform];
+      window.open(urls[platform], '_blank');
     }
   };
 
