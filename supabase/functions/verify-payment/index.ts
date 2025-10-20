@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const metadata = paystackData.data.metadata;
     const userId = metadata.user_id;
-    const planId = metadata.plan_id;
+    const transactionType = metadata.type || 'subscription';
     const referralCode = metadata.referral_code;
 
     // Update transaction status
@@ -52,51 +52,91 @@ serve(async (req) => {
       })
       .eq('paystack_reference', reference);
 
-    // Get plan details
-    const { data: plan } = await supabaseClient
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', planId)
-      .single();
+    if (transactionType === 'credit_purchase') {
+      // Handle credit package purchase
+      const credits = metadata.credits;
+      
+      // Get current AI credits
+      const { data: currentProfile } = await supabaseClient
+        .from('profiles')
+        .select('ai_credits')
+        .eq('id', userId)
+        .single();
 
-    // Calculate subscription period
-    const currentPeriodStart = new Date();
-    const currentPeriodEnd = new Date();
-    if (plan.billing_interval === 'monthly') {
-      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
-    } else if (plan.billing_interval === 'yearly') {
-      currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
-    }
-
-    // Create or update subscription
-    const { data: existingSubscription } = await supabaseClient
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
-
-    if (existingSubscription) {
+      // Add credits to user profile
       await supabaseClient
-        .from('user_subscriptions')
+        .from('profiles')
         .update({
-          plan_id: planId,
-          current_period_start: currentPeriodStart.toISOString(),
-          current_period_end: currentPeriodEnd.toISOString(),
-          paystack_customer_code: paystackData.data.customer.customer_code,
+          ai_credits: (currentProfile?.ai_credits || 0) + credits,
         })
-        .eq('id', existingSubscription.id);
+        .eq('id', userId);
+
+      console.log(`Added ${credits} AI credits to user ${userId}`);
     } else {
-      await supabaseClient
+      // Handle subscription
+      const planId = metadata.plan_id;
+
+      // Get plan details
+      const { data: plan } = await supabaseClient
+        .from('subscription_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      // Calculate subscription period
+      const currentPeriodStart = new Date();
+      const currentPeriodEnd = new Date();
+      if (plan.billing_interval === 'monthly') {
+        currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+      } else if (plan.billing_interval === 'yearly') {
+        currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+      }
+
+      // Create or update subscription
+      const { data: existingSubscription } = await supabaseClient
         .from('user_subscriptions')
-        .insert({
-          user_id: userId,
-          plan_id: planId,
-          status: 'active',
-          current_period_start: currentPeriodStart.toISOString(),
-          current_period_end: currentPeriodEnd.toISOString(),
-          paystack_customer_code: paystackData.data.customer.customer_code,
-        });
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (existingSubscription) {
+        await supabaseClient
+          .from('user_subscriptions')
+          .update({
+            plan_id: planId,
+            current_period_start: currentPeriodStart.toISOString(),
+            current_period_end: currentPeriodEnd.toISOString(),
+            paystack_customer_code: paystackData.data.customer.customer_code,
+          })
+          .eq('id', existingSubscription.id);
+      } else {
+        await supabaseClient
+          .from('user_subscriptions')
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            status: 'active',
+            current_period_start: currentPeriodStart.toISOString(),
+            current_period_end: currentPeriodEnd.toISOString(),
+            paystack_customer_code: paystackData.data.customer.customer_code,
+          });
+      }
+
+      // Get current AI credits
+      const { data: currentProfile } = await supabaseClient
+        .from('profiles')
+        .select('ai_credits')
+        .eq('id', userId)
+        .single();
+
+      // Add AI credits to user profile
+      await supabaseClient
+        .from('profiles')
+        .update({
+          ai_credits: (currentProfile?.ai_credits || 0) + plan.ai_credits,
+        })
+        .eq('id', userId);
     }
 
     // Store payment method if authorization exists
@@ -133,23 +173,8 @@ serve(async (req) => {
       }
     }
 
-    // Get current AI credits
-    const { data: currentProfile } = await supabaseClient
-      .from('profiles')
-      .select('ai_credits')
-      .eq('id', userId)
-      .single();
-
-    // Add AI credits to user profile
-    await supabaseClient
-      .from('profiles')
-      .update({
-        ai_credits: (currentProfile?.ai_credits || 0) + plan.ai_credits,
-      })
-      .eq('id', userId);
-
-    // Process referral if exists
-    if (referralCode) {
+    // Process referral if exists (only for subscriptions)
+    if (transactionType === 'subscription' && referralCode) {
       const { data: referralCodeData } = await supabaseClient
         .from('referral_codes')
         .select('user_id')
@@ -157,7 +182,14 @@ serve(async (req) => {
         .single();
 
       if (referralCodeData && referralCodeData.user_id !== userId) {
-        const rewardAmount = plan.price * 0.1; // 10% referral reward
+        // Get plan for reward calculation
+        const { data: plan } = await supabaseClient
+          .from('subscription_plans')
+          .select('price')
+          .eq('id', metadata.plan_id)
+          .single();
+
+        const rewardAmount = plan ? plan.price * 0.1 : 0;
 
         // Create referral record
         await supabaseClient

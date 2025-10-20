@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CreditCard, Calendar, Activity, ArrowLeft } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { PaymentMethods } from '@/components/PaymentMethods';
+import CreditPackages from '@/components/CreditPackages';
 import { Separator } from '@/components/ui/separator';
 
 export default function Billing() {
@@ -261,12 +262,15 @@ export default function Billing() {
           </Card>
         </div>
 
-        <Separator className="my-8" />
+        <Separator />
 
-        {/* Payment Methods Section */}
+        <CreditPackages />
+
+        <Separator />
+
         <PaymentMethods />
 
-        <Separator className="my-8" />
+        <Separator />
 
         {/* Need Help Section */}
         <Card>

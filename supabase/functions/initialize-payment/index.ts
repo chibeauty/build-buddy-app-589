@@ -27,50 +27,100 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { planId, referralCode, isUpgrade, currentSubscriptionId } = await req.json();
+    const { planId, packageId, referralCode, isUpgrade, currentSubscriptionId } = await req.json();
 
-    // Get plan details
-    const { data: plan, error: planError } = await supabaseClient
-      .from('subscription_plans')
-      .select('*')
-      .eq('id', planId)
-      .single();
+    let amount: number;
+    let currency: string;
+    let metadata: any;
+    let transactionType: string;
 
-    if (planError) throw planError;
-
-    let finalAmount = plan.price;
-
-    // Calculate prorated amount for upgrades
-    if (isUpgrade && currentSubscriptionId) {
-      const { data: currentSub } = await supabaseClient
-        .from('user_subscriptions')
-        .select('*, subscription_plans(*)')
-        .eq('id', currentSubscriptionId)
+    if (packageId) {
+      // Handle credit package purchase
+      const { data: pkg, error: pkgError } = await supabaseClient
+        .from('ai_credit_packages')
+        .select('*')
+        .eq('id', packageId)
         .single();
 
-      if (currentSub) {
-        const currentPeriodEnd = new Date(currentSub.current_period_end);
-        const now = new Date();
-        const daysRemaining = Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        const totalDays = currentSub.subscription_plans.billing_interval === 'monthly' ? 30 : 365;
-        
-        // Calculate unused amount from current plan
-        const unusedAmount = (currentSub.subscription_plans.price / totalDays) * daysRemaining;
-        
-        // Calculate prorated amount for new plan
-        const newPlanProrated = (plan.price / totalDays) * daysRemaining;
-        
-        // Final amount is the difference
-        finalAmount = Math.max(0, newPlanProrated - unusedAmount);
-      }
-    }
+      if (pkgError) throw pkgError;
 
-    // Get user profile for email
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single();
+      // Get user profile for email
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      amount = Math.round(Number(pkg.price) * 100);
+      currency = pkg.currency;
+      transactionType = 'credit_purchase';
+      metadata = {
+        user_id: user.id,
+        package_id: packageId,
+        credits: pkg.credits,
+        type: 'credit_purchase',
+        customer_name: profile?.full_name || 'User',
+      };
+    } else if (planId) {
+      // Handle subscription
+      // Get plan details
+      const { data: plan, error: planError } = await supabaseClient
+        .from('subscription_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      if (planError) throw planError;
+
+      let finalAmount = plan.price;
+
+      // Calculate prorated amount for upgrades
+      if (isUpgrade && currentSubscriptionId) {
+        const { data: currentSub } = await supabaseClient
+          .from('user_subscriptions')
+          .select('*, subscription_plans(*)')
+          .eq('id', currentSubscriptionId)
+          .single();
+
+        if (currentSub) {
+          const currentPeriodEnd = new Date(currentSub.current_period_end);
+          const now = new Date();
+          const daysRemaining = Math.ceil((currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const totalDays = currentSub.subscription_plans.billing_interval === 'monthly' ? 30 : 365;
+          
+          // Calculate unused amount from current plan
+          const unusedAmount = (currentSub.subscription_plans.price / totalDays) * daysRemaining;
+          
+          // Calculate prorated amount for new plan
+          const newPlanProrated = (plan.price / totalDays) * daysRemaining;
+          
+          // Final amount is the difference
+          finalAmount = Math.max(0, newPlanProrated - unusedAmount);
+        }
+      }
+
+      // Get user profile for email
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      amount = Math.round(finalAmount * 100);
+      currency = plan.currency;
+      transactionType = isUpgrade ? 'upgrade' : 'subscription';
+      metadata = {
+        user_id: user.id,
+        plan_id: planId,
+        type: 'subscription',
+        referral_code: referralCode || null,
+        customer_name: profile?.full_name || 'User',
+        is_upgrade: isUpgrade || false,
+        current_subscription_id: currentSubscriptionId || null,
+      };
+    } else {
+      throw new Error('Either planId or packageId is required');
+    }
 
     const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');
     if (!paystackSecretKey) {
@@ -86,16 +136,9 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(finalAmount * 100), // Paystack expects amount in kobo
-        currency: plan.currency,
-        metadata: {
-          user_id: user.id,
-          plan_id: planId,
-          referral_code: referralCode || null,
-          customer_name: profile?.full_name || 'User',
-          is_upgrade: isUpgrade || false,
-          current_subscription_id: currentSubscriptionId || null,
-        },
+        amount,
+        currency,
+        metadata,
         callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-payment`,
       }),
     });
@@ -112,16 +155,11 @@ serve(async (req) => {
       .insert({
         user_id: user.id,
         paystack_reference: paystackData.data.reference,
-        amount: finalAmount,
-        currency: plan.currency,
+        amount: amount / 100,
+        currency,
         status: 'pending',
-        transaction_type: isUpgrade ? 'upgrade' : 'subscription',
-        metadata: {
-          plan_id: planId,
-          referral_code: referralCode || null,
-          is_upgrade: isUpgrade || false,
-          current_subscription_id: currentSubscriptionId || null,
-        },
+        transaction_type: transactionType,
+        metadata,
       });
 
     console.log('Payment initialized:', paystackData.data.reference);
