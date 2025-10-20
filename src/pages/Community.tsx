@@ -344,7 +344,7 @@ export default function Community() {
             {filteredGroups.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {filteredGroups.map((group) => (
-                  <Card key={group.id}>
+                  <Card key={group.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/community/groups/${group.id}`)}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -362,7 +362,7 @@ export default function Community() {
                           <Users className="h-4 w-4" />
                           <span>{group.member_count} members</span>
                         </div>
-                        <Button onClick={() => handleJoinGroup(group.id)}>Join Group</Button>
+                        <Button onClick={(e) => { e.stopPropagation(); handleJoinGroup(group.id); }}>Join Group</Button>
                       </div>
                     </CardContent>
                   </Card>
