@@ -159,11 +159,11 @@ export default function Dashboard() {
               <span>Create Study Plan</span>
             </Button>
             <Button
-              onClick={() => navigate("/flashcards/create")}
+              onClick={() => navigate("/summarize")}
               className="h-24 flex flex-col gap-2"
             >
-              <CreditCard className="h-6 w-6" />
-              <span>Make Flashcards</span>
+              <Zap className="h-6 w-6" />
+              <span>Summarize Notes</span>
             </Button>
           </CardContent>
         </Card>

@@ -22,6 +22,7 @@ const StudyPlans = lazy(() => import("./pages/StudyPlans"));
 const Quizzes = lazy(() => import("./pages/Quizzes"));
 const Flashcards = lazy(() => import("./pages/Flashcards"));
 const Community = lazy(() => import("./pages/Community"));
+const Summarize = lazy(() => import("./pages/Summarize"));
 const GroupDetails = lazy(() => import("./pages/community/GroupDetails"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/flashcards/create" element={<ProtectedRoute><CreateDeck /></ProtectedRoute>} />
                 <Route path="/flashcards/:id" element={<ProtectedRoute><DeckDetails /></ProtectedRoute>} />
                 <Route path="/flashcards/:id/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
+                <Route path="/summarize" element={<ProtectedRoute><Summarize /></ProtectedRoute>} />
                 <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
                 <Route path="/community/groups/:id" element={<ProtectedRoute><GroupDetails /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
