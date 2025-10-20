@@ -115,7 +115,7 @@ export default function Referrals() {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`,
-      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + link)}`,
+      whatsapp: `https://web.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + link)}`,
     };
 
     if (urls[platform]) {
