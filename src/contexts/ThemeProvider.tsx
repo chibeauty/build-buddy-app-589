@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { type ThemeProviderProps } from "next-themes/dist/types";
-import { useLocation } from "react-router-dom";
 
 type AdaptiveTheme = "light" | "dark" | "morning" | "afternoon" | "evening" | "night" | "focus" | "creative" | "calm" | "auto";
 
@@ -20,7 +19,7 @@ export function useAdaptiveTheme() {
   return context;
 }
 
-function getTimeBasedTheme(): string {
+export function getTimeBasedTheme(): string {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 9) return "morning";
   if (hour >= 9 && hour < 17) return "afternoon";
@@ -28,7 +27,7 @@ function getTimeBasedTheme(): string {
   return "night";
 }
 
-function getContextualTheme(pathname: string): string {
+export function getContextualTheme(pathname: string): string {
   if (pathname.includes("quiz")) return "focus";
   if (pathname.includes("flashcard") || pathname.includes("study")) return "focus";
   if (pathname.includes("community")) return "creative";
@@ -37,7 +36,6 @@ function getContextualTheme(pathname: string): string {
 }
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  const location = useLocation();
   const [adaptiveTheme, setAdaptiveTheme] = useState<AdaptiveTheme>(() => {
     return (localStorage.getItem("adaptive-theme") as AdaptiveTheme) || "auto";
   });
@@ -53,14 +51,12 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     localStorage.setItem("auto-theme", String(autoTheme));
   }, [autoTheme]);
 
+  // Apply theme when manually changed (not auto)
   useEffect(() => {
-    if (adaptiveTheme === "auto" || autoTheme) {
-      const theme = getContextualTheme(location.pathname);
-      document.documentElement.className = theme;
-    } else {
+    if (adaptiveTheme !== "auto" && !autoTheme) {
       document.documentElement.className = adaptiveTheme;
     }
-  }, [adaptiveTheme, autoTheme, location.pathname]);
+  }, [adaptiveTheme, autoTheme]);
 
   return (
     <AdaptiveThemeContext.Provider value={{ adaptiveTheme, setAdaptiveTheme, autoTheme, setAutoTheme }}>

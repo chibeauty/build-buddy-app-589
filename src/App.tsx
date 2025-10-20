@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { UpgradeButton } from "@/components/UpgradeButton";
+import { AdaptiveThemeWatcher } from "@/components/AdaptiveThemeWatcher";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -56,6 +57,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AdaptiveThemeWatcher />
             <AuthProvider>
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
