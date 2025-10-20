@@ -158,10 +158,15 @@ export default function TakeQuiz() {
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   
-  // Ensure options is always an array
-  const questionOptions = Array.isArray(currentQuestion.options) 
-    ? currentQuestion.options 
-    : [];
+  // Handle options as either array or object
+  const questionOptions = (() => {
+    if (!currentQuestion.options) return [];
+    if (Array.isArray(currentQuestion.options)) return currentQuestion.options;
+    if (typeof currentQuestion.options === 'object') {
+      return Object.values(currentQuestion.options);
+    }
+    return [];
+  })();
 
   return (
     <div className="container max-w-3xl py-8">
