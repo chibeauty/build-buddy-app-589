@@ -12,6 +12,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { UpgradeButton } from "@/components/UpgradeButton";
 import { AdaptiveThemeWatcher } from "@/components/AdaptiveThemeWatcher";
+import { FocusTimerButton } from "@/components/focus/FocusTimerButton";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -98,6 +99,7 @@ const App = () => (
             </Suspense>
             <OfflineIndicator />
             <UpgradeButton />
+            <FocusTimerButton />
           </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>
