@@ -131,7 +131,7 @@ serve(async (req) => {
     const { error: deductError } = await supabase.rpc('deduct_ai_credits', {
       _user_id: user.id,
       _credits: creditsNeeded,
-      _feature_type: 'summarize_content'
+      _feature_type: 'content_summary'
     });
 
     if (deductError) {

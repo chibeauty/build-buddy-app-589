@@ -68,36 +68,50 @@ export default function Summarize() {
 
     setIsProcessing(true);
     try {
-      // Read file content
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const content = e.target?.result as string;
-
-        // Call edge function
-        const { data, error } = await supabase.functions.invoke('summarize-content', {
-          body: {
-            content: content.substring(0, 50000), // Limit to 50k chars
-            includeDefinitions: true,
-            includeQuiz: true,
-          },
-        });
-
-        if (error) throw error;
-
-        setResult(data);
-        await fetchCredits();
-        
+      let content = '';
+      
+      // Handle different file types
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         toast({
-          title: 'Summary generated!',
-          description: 'Your document has been processed successfully',
+          title: 'Processing PDF',
+          description: 'This may take a moment...',
         });
-      };
+        // For PDFs, read as text (basic support)
+        // For better PDF support, consider using a PDF parsing library
+        content = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string || '');
+          reader.onerror = () => reject(new Error('Failed to read PDF'));
+          reader.readAsText(file);
+        });
+      } else {
+        // For text files
+        content = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string || '');
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+      }
 
-      reader.onerror = () => {
-        throw new Error('Failed to read file');
-      };
+      // Call edge function
+      const { data, error } = await supabase.functions.invoke('summarize-content', {
+        body: {
+          content: content.substring(0, 50000), // Limit to 50k chars
+          includeDefinitions: true,
+          includeQuiz: true,
+        },
+      });
 
-      reader.readAsText(file);
+      if (error) throw error;
+
+      setResult(data);
+      await fetchCredits();
+      
+      toast({
+        title: 'Summary generated!',
+        description: 'Your document has been processed successfully',
+      });
     } catch (error: any) {
       console.error('Error processing document:', error);
       toast({
@@ -196,7 +210,7 @@ export default function Summarize() {
                 type="file"
                 id="file-upload"
                 className="hidden"
-                accept=".pdf,.txt,.doc,.docx,.jpg,.jpeg,.png"
+                accept=".txt,.doc,.docx,.md"
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
@@ -205,7 +219,7 @@ export default function Summarize() {
                   {file ? file.name : 'Click to upload or drag and drop'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  PDF, TXT, DOC, DOCX, JPG, or PNG (max 20MB)
+                  TXT, DOC, DOCX, or MD (max 20MB)
                 </p>
               </label>
             </div>
