@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, FileText, Sparkles, BookOpen, HelpCircle, Download, Save } from 'lucide-react';
+import { Upload, FileText, Sparkles, BookOpen, HelpCircle, Save, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SummaryResult {
@@ -42,9 +42,9 @@ export default function Summarize() {
     if (data) setCredits(data.ai_credits);
   };
 
-  useState(() => {
+  useEffect(() => {
     fetchCredits();
-  });
+  }, [user]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -66,44 +66,57 @@ export default function Summarize() {
   const handleProcess = async () => {
     if (!file || !user) return;
 
+    // Check if user has enough credits
+    if (credits !== null && credits < 5) {
+      toast({
+        title: 'Insufficient credits',
+        description: 'You need at least 5 AI credits to summarize content',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
+      toast({
+        title: 'Processing document',
+        description: 'Reading and analyzing your file...',
+      });
+
       let content = '';
       
-      // Handle different file types
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        toast({
-          title: 'Processing PDF',
-          description: 'This may take a moment...',
-        });
-        // For PDFs, read as text (basic support)
-        // For better PDF support, consider using a PDF parsing library
-        content = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string || '');
-          reader.onerror = () => reject(new Error('Failed to read PDF'));
-          reader.readAsText(file);
-        });
-      } else {
-        // For text files
-        content = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string || '');
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsText(file);
-        });
-      }
+      // Read file content as text
+      content = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          if (!result || result.trim().length < 50) {
+            reject(new Error('File appears to be empty or too short'));
+            return;
+          }
+          resolve(result);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
 
-      // Call edge function
+      // Call edge function with content
       const { data, error } = await supabase.functions.invoke('summarize-content', {
         body: {
-          content: content.substring(0, 50000), // Limit to 50k chars
+          content: content,
           includeDefinitions: true,
           includeQuiz: true,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to process document');
+      }
+
+      if (!data || !data.summary) {
+        throw new Error('Invalid response from AI service');
+      }
 
       setResult(data);
       await fetchCredits();
@@ -115,8 +128,8 @@ export default function Summarize() {
     } catch (error: any) {
       console.error('Error processing document:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to process document',
+        title: 'Processing failed',
+        description: error.message || 'Failed to process document. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -210,7 +223,7 @@ export default function Summarize() {
                 type="file"
                 id="file-upload"
                 className="hidden"
-                accept=".txt,.doc,.docx,.md"
+                accept=".txt,.md,.doc,.docx"
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
@@ -219,10 +232,19 @@ export default function Summarize() {
                   {file ? file.name : 'Click to upload or drag and drop'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  TXT, DOC, DOCX, or MD (max 20MB)
+                  TXT, MD, DOC, or DOCX (max 20MB)
                 </p>
               </label>
             </div>
+
+            {credits !== null && credits < 5 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You don't have enough AI credits. You need at least 5 credits to summarize content.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {file && (
               <Alert>
@@ -233,11 +255,14 @@ export default function Summarize() {
                   </span>
                   <Button
                     onClick={handleProcess}
-                    disabled={isProcessing}
+                    disabled={isProcessing || (credits !== null && credits < 5)}
                     size="sm"
                   >
                     {isProcessing ? (
-                      <>Processing...</>
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-2" />

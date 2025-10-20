@@ -50,31 +50,77 @@ serve(async (req) => {
       );
     }
 
-    // Build prompt based on requested features
-    let systemPrompt = 'You are an educational AI assistant that helps students understand and learn from their study materials. Always respond with valid JSON.';
-    let userPrompt = `Analyze the following study material and provide:\n\n`;
-    
-    userPrompt += `1. A comprehensive summary (2-3 paragraphs)\n`;
-    userPrompt += `2. 5-7 key points or takeaways\n`;
-    
-    if (includeDefinitions) {
-      userPrompt += `3. Important definitions or terms (extract at least 3-5 key terms with definitions)\n`;
-    }
-    
-    if (includeQuiz) {
-      userPrompt += `4. 5 multiple choice quiz questions with 4 options each and indicate the correct answer\n`;
-    }
-    
-    userPrompt += `\nProvide your response in valid JSON format with this structure:\n`;
-    userPrompt += `{\n`;
-    userPrompt += `  "summary": "string",\n`;
-    userPrompt += `  "keyPoints": ["string"],\n`;
-    userPrompt += `  "definitions": [{"term": "string", "definition": "string"}],\n`;
-    userPrompt += `  "quizQuestions": [{"question": "string", "options": ["string"], "correctAnswer": "string"}]\n`;
-    userPrompt += `}\n\n`;
-    userPrompt += `Study Material:\n${content.substring(0, 10000)}`;
+    const systemPrompt = `You are an expert educational AI assistant that helps students learn effectively. 
+Your role is to analyze study materials and extract the most important information in a clear, educational format.
+Focus on understanding, not just memorization.`;
+
+    const userPrompt = `Analyze the following study material and extract key learning elements.
+
+Study Material:
+${content.substring(0, 50000)}
+
+Please provide:
+1. A comprehensive summary (2-3 well-structured paragraphs that capture the main concepts and ideas)
+2. 5-7 key points or takeaways (the most important concepts students should remember)
+${includeDefinitions ? '3. Important definitions and terms (identify 3-5 crucial terms with clear, concise definitions)' : ''}
+${includeQuiz ? '4. 5 multiple choice questions (test understanding, not just recall - include 4 options per question)' : ''}
+
+Make the content educational, clear, and focused on helping students understand the material deeply.`;
 
     console.log('Processing content with AI...');
+
+    // Build tool definition for structured output
+    const tools = [{
+      type: "function",
+      function: {
+        name: "create_study_summary",
+        description: "Create a structured summary with key points, definitions, and quiz questions from study material",
+        parameters: {
+          type: "object",
+          properties: {
+            summary: {
+              type: "string",
+              description: "A comprehensive 2-3 paragraph summary of the study material"
+            },
+            keyPoints: {
+              type: "array",
+              items: { type: "string" },
+              description: "5-7 key points or main takeaways from the material"
+            },
+            definitions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  term: { type: "string", description: "The term or concept" },
+                  definition: { type: "string", description: "Clear definition of the term" }
+                },
+                required: ["term", "definition"]
+              },
+              description: "Important terms and their definitions (3-5 key terms)"
+            },
+            quizQuestions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  question: { type: "string", description: "The quiz question" },
+                  options: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Exactly 4 answer options"
+                  },
+                  correctAnswer: { type: "string", description: "The correct answer (must match one of the options)" }
+                },
+                required: ["question", "options", "correctAnswer"]
+              },
+              description: "5 multiple choice questions to test understanding"
+            }
+          },
+          required: ["summary", "keyPoints", "definitions", "quizQuestions"]
+        }
+      }
+    }];
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -88,7 +134,8 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        response_format: { type: "json_object" }
+        tools: tools,
+        tool_choice: { type: "function", function: { name: "create_study_summary" } }
       }),
     });
 
@@ -111,20 +158,30 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const resultText = data.choices[0].message.content;
+    console.log('AI Response received');
     
     let result;
     try {
-      result = JSON.parse(resultText);
+      // Extract result from tool call
+      const toolCall = data.choices[0].message.tool_calls?.[0];
+      if (toolCall && toolCall.function) {
+        result = JSON.parse(toolCall.function.arguments);
+      } else {
+        throw new Error('No tool call found in response');
+      }
+      
+      // Validate structure
+      if (!result.summary || !Array.isArray(result.keyPoints)) {
+        throw new Error('Invalid response structure');
+      }
+      
+      // Ensure arrays exist even if empty
+      result.definitions = result.definitions || [];
+      result.quizQuestions = result.quizQuestions || [];
+      
     } catch (e) {
-      console.error('Failed to parse AI response:', resultText);
-      // Fallback to basic summary
-      result = {
-        summary: resultText,
-        keyPoints: [],
-        definitions: [],
-        quizQuestions: []
-      };
+      console.error('Failed to parse AI response:', e);
+      throw new Error('Failed to generate valid summary format');
     }
 
     // Deduct credits
