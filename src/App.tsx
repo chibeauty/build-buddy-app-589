@@ -3,77 +3,88 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import StudyPlans from "./pages/StudyPlans";
-import Quizzes from "./pages/Quizzes";
-import Flashcards from "./pages/Flashcards";
-import Community from "./pages/Community";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Help from "./pages/Help";
-import Offline from "./pages/Offline";
-import NotFound from "./pages/NotFound";
-import CreatePlan from "./pages/study-plans/CreatePlan";
-import PlanDetails from "./pages/study-plans/PlanDetails";
-import GenerateQuiz from "./pages/quizzes/GenerateQuiz";
-import QuizDetails from "./pages/quizzes/QuizDetails";
-import TakeQuiz from "./pages/quizzes/TakeQuiz";
-import QuizResults from "./pages/quizzes/QuizResults";
-import CreateDeck from "./pages/flashcards/CreateDeck";
-import DeckDetails from "./pages/flashcards/DeckDetails";
-import StudyMode from "./pages/flashcards/StudyMode";
-import Achievements from "./pages/profile/Achievements";
-import Welcome from "./pages/onboarding/Welcome";
-import LearningStyle from "./pages/onboarding/LearningStyle";
-import Goals from "./pages/onboarding/Goals";
-import Notifications from "./pages/onboarding/Notifications";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+
+// Lazy load pages for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const StudyPlans = lazy(() => import("./pages/StudyPlans"));
+const Quizzes = lazy(() => import("./pages/Quizzes"));
+const Flashcards = lazy(() => import("./pages/Flashcards"));
+const Community = lazy(() => import("./pages/Community"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Help = lazy(() => import("./pages/Help"));
+const Offline = lazy(() => import("./pages/Offline"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CreatePlan = lazy(() => import("./pages/study-plans/CreatePlan"));
+const PlanDetails = lazy(() => import("./pages/study-plans/PlanDetails"));
+const GenerateQuiz = lazy(() => import("./pages/quizzes/GenerateQuiz"));
+const QuizDetails = lazy(() => import("./pages/quizzes/QuizDetails"));
+const TakeQuiz = lazy(() => import("./pages/quizzes/TakeQuiz"));
+const QuizResults = lazy(() => import("./pages/quizzes/QuizResults"));
+const CreateDeck = lazy(() => import("./pages/flashcards/CreateDeck"));
+const DeckDetails = lazy(() => import("./pages/flashcards/DeckDetails"));
+const StudyMode = lazy(() => import("./pages/flashcards/StudyMode"));
+const Achievements = lazy(() => import("./pages/profile/Achievements"));
+const Welcome = lazy(() => import("./pages/onboarding/Welcome"));
+const LearningStyle = lazy(() => import("./pages/onboarding/LearningStyle"));
+const Goals = lazy(() => import("./pages/onboarding/Goals"));
+const Notifications = lazy(() => import("./pages/onboarding/Notifications"));
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
-            <Route path="/onboarding/learning-style" element={<ProtectedRoute><LearningStyle /></ProtectedRoute>} />
-            <Route path="/onboarding/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-            <Route path="/onboarding/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/study-plans" element={<ProtectedRoute><StudyPlans /></ProtectedRoute>} />
-          <Route path="/study-plans/create" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
-          <Route path="/study-plans/:id" element={<ProtectedRoute><PlanDetails /></ProtectedRoute>} />
-          <Route path="/quizzes" element={<ProtectedRoute><Quizzes /></ProtectedRoute>} />
-          <Route path="/quizzes/generate" element={<ProtectedRoute><GenerateQuiz /></ProtectedRoute>} />
-          <Route path="/quizzes/:id" element={<ProtectedRoute><QuizDetails /></ProtectedRoute>} />
-          <Route path="/quizzes/:id/take" element={<ProtectedRoute><TakeQuiz /></ProtectedRoute>} />
-          <Route path="/quizzes/:id/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
-          <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
-          <Route path="/flashcards/create" element={<ProtectedRoute><CreateDeck /></ProtectedRoute>} />
-          <Route path="/flashcards/:id" element={<ProtectedRoute><DeckDetails /></ProtectedRoute>} />
-          <Route path="/flashcards/:id/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/profile/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
-            <Route path="/offline" element={<Offline />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Suspense fallback={<LoadingScreen />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/onboarding/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+                <Route path="/onboarding/learning-style" element={<ProtectedRoute><LearningStyle /></ProtectedRoute>} />
+                <Route path="/onboarding/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+                <Route path="/onboarding/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/study-plans" element={<ProtectedRoute><StudyPlans /></ProtectedRoute>} />
+                <Route path="/study-plans/create" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
+                <Route path="/study-plans/:id" element={<ProtectedRoute><PlanDetails /></ProtectedRoute>} />
+                <Route path="/quizzes" element={<ProtectedRoute><Quizzes /></ProtectedRoute>} />
+                <Route path="/quizzes/generate" element={<ProtectedRoute><GenerateQuiz /></ProtectedRoute>} />
+                <Route path="/quizzes/:id" element={<ProtectedRoute><QuizDetails /></ProtectedRoute>} />
+                <Route path="/quizzes/:id/take" element={<ProtectedRoute><TakeQuiz /></ProtectedRoute>} />
+                <Route path="/quizzes/:id/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
+                <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+                <Route path="/flashcards/create" element={<ProtectedRoute><CreateDeck /></ProtectedRoute>} />
+                <Route path="/flashcards/:id" element={<ProtectedRoute><DeckDetails /></ProtectedRoute>} />
+                <Route path="/flashcards/:id/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
+                <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/profile/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+                <Route path="/offline" element={<Offline />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <OfflineIndicator />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
