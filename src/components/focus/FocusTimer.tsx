@@ -81,6 +81,7 @@ export function FocusTimer() {
     if (audioRef.current) {
       audioRef.current.volume = ambientVolume / 100;
       if (ambientSound !== "none" && isRunning) {
+        audioRef.current.load();
         audioRef.current.play().catch(() => {});
       } else {
         audioRef.current.pause();
