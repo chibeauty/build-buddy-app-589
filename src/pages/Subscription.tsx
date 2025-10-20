@@ -8,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Zap, Crown, Sparkles } from 'lucide-react';
+import { Check, Zap, Crown, Sparkles, Gift } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SubscriptionPlan {
   id: string;
@@ -30,12 +31,15 @@ export default function Subscription() {
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
   const [aiCredits, setAiCredits] = useState(0);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchPlans();
       fetchCurrentSubscription();
       fetchAiCredits();
+      const storedReferralCode = localStorage.getItem('referral_code');
+      setReferralCode(storedReferralCode);
     }
   }, [user]);
 
@@ -109,11 +113,22 @@ export default function Subscription() {
     setProcessingPlanId(planId);
 
     try {
+      // Get referral code from localStorage if available
+      const referralCode = localStorage.getItem('referral_code');
+      
       const { data, error } = await supabase.functions.invoke('initialize-payment', {
-        body: { planId },
+        body: { 
+          planId,
+          referralCode: referralCode || undefined,
+        },
       });
 
       if (error) throw error;
+
+      // Clear referral code after successful payment initialization
+      if (referralCode) {
+        localStorage.removeItem('referral_code');
+      }
 
       // Redirect to Paystack payment page
       window.location.href = data.authorization_url;
@@ -181,6 +196,15 @@ export default function Subscription() {
             </span>
           </div>
         </div>
+
+        {referralCode && (
+          <Alert className="bg-primary/10 border-primary max-w-2xl mx-auto">
+            <Gift className="h-4 w-4 text-primary" />
+            <AlertDescription>
+              You have a referral bonus! Subscribe to any plan and get <strong>100 bonus AI credits</strong> instantly.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,15 +13,27 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { signUpSchema, signInSchema, forgotPasswordSchema, SignUpInput, SignInInput, ForgotPasswordInput } from '@/lib/validations';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Gift } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref');
   const { signUp, signIn, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Store referral code in localStorage if present
+    if (referralCode) {
+      localStorage.setItem('referral_code', referralCode);
+      // Switch to signup tab if coming from referral link
+      setActiveTab('signup');
+    }
+  }, [referralCode]);
 
   const signUpForm = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -186,6 +198,14 @@ export default function Auth() {
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4">
+              {referralCode && (
+                <Alert className="bg-primary/10 border-primary">
+                  <Gift className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    You're signing up with a referral code! You'll get <strong>100 bonus AI credits</strong> when you subscribe.
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name</Label>
