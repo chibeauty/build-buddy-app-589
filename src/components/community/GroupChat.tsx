@@ -151,8 +151,8 @@ export function GroupChat({ groupId }: GroupChatProps) {
         <h3 className="font-semibold">Group Chat</h3>
       </div>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-4">
+        <div ref={scrollRef} className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               No messages yet. Start the conversation!
