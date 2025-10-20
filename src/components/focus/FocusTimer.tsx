@@ -77,17 +77,31 @@ export function FocusTimer() {
     return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
+  // Handle volume changes separately
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = ambientVolume / 100;
-      if (ambientSound !== "none" && isRunning) {
-        audioRef.current.load();
-        audioRef.current.play().catch(() => {});
+    }
+  }, [ambientVolume]);
+
+  // Handle play/pause/load
+  useEffect(() => {
+    if (audioRef.current && ambientSound !== "none") {
+      audioRef.current.load();
+      if (isRunning) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Auto-play was prevented, user needs to interact first
+          });
+        }
       } else {
         audioRef.current.pause();
       }
+    } else if (audioRef.current && ambientSound === "none") {
+      audioRef.current.pause();
     }
-  }, [ambientSound, ambientVolume, isRunning]);
+  }, [ambientSound, isRunning]);
 
   const handleTimerComplete = () => {
     setIsRunning(false);
