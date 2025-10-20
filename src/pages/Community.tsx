@@ -82,12 +82,37 @@ export default function Community() {
 
   const handleJoinGroup = async (groupId: string) => {
     try {
+      // Check if already a member
+      const { data: existingMember } = await supabase
+        .from("group_members")
+        .select("id")
+        .eq("group_id", groupId)
+        .eq("user_id", user!.id)
+        .single();
+
+      if (existingMember) {
+        toast({
+          title: "Already a member",
+          description: "You're already a member of this group",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("group_members").insert({
         group_id: groupId,
         user_id: user!.id,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          toast({
+            title: "Already a member",
+            description: "You're already a member of this group",
+          });
+          return;
+        }
+        throw error;
+      }
 
       await supabase
         .from("study_groups")
