@@ -38,7 +38,8 @@ const Achievements = lazy(() => import("./pages/profile/Achievements"));
 const Welcome = lazy(() => import("./pages/onboarding/Welcome"));
 const LearningStyle = lazy(() => import("./pages/onboarding/LearningStyle"));
 const Goals = lazy(() => import("./pages/onboarding/Goals"));
-const Notifications = lazy(() => import("./pages/onboarding/Notifications"));
+const NotificationsOnboarding = lazy(() => import("./pages/onboarding/Notifications"));
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const Billing = lazy(() => import("./pages/Billing"));
 const Referrals = lazy(() => import("./pages/Referrals"));
@@ -61,7 +62,8 @@ const App = () => (
                 <Route path="/onboarding/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
                 <Route path="/onboarding/learning-style" element={<ProtectedRoute><LearningStyle /></ProtectedRoute>} />
                 <Route path="/onboarding/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-                <Route path="/onboarding/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/onboarding/notifications" element={<ProtectedRoute><NotificationsOnboarding /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/study-plans" element={<ProtectedRoute><StudyPlans /></ProtectedRoute>} />
                 <Route path="/study-plans/create" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />

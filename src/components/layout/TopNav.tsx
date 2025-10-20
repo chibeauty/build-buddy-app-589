@@ -42,7 +42,15 @@ export function TopNav() {
             Upgrade
           </Button>
 
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => {
+              // TODO: Implement notifications panel
+              navigate('/notifications');
+            }}
+          >
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 bg-accent rounded-full" />
           </Button>
