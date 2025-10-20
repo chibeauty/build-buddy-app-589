@@ -158,8 +158,17 @@ export default function TakeQuiz() {
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   
-  // Handle options as either array or object with keys
+  // Handle different question types and options formats
   const questionOptions = (() => {
+    // For true/false questions, create True/False options
+    if (currentQuestion.question_type === 'true_false') {
+      return [
+        { key: 'true', value: 'True' },
+        { key: 'false', value: 'False' }
+      ];
+    }
+    
+    // For multiple choice questions
     if (!currentQuestion.options) return [];
     if (Array.isArray(currentQuestion.options)) {
       return currentQuestion.options.map((opt: string) => ({ key: opt, value: opt }));
@@ -214,10 +223,14 @@ export default function TakeQuiz() {
           >
             {questionOptions.length > 0 ? (
               questionOptions.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent">
+                <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent cursor-pointer">
                   <RadioGroupItem value={option.key} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                    <span className="font-medium">{option.key}.</span> {option.value}
+                    {currentQuestion.question_type === 'true_false' ? (
+                      option.value
+                    ) : (
+                      <><span className="font-medium">{option.key}.</span> {option.value}</>
+                    )}
                   </Label>
                 </div>
               ))
