@@ -168,6 +168,32 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {profile && profile.ai_credits < 100 && (
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Upgrade Your Plan
+              </CardTitle>
+              <CardDescription>Get more AI credits and unlock premium features</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Current AI Credits</p>
+                  <p className="text-2xl font-bold">{profile.ai_credits}</p>
+                </div>
+                <Button onClick={() => navigate('/subscription')}>
+                  View Plans
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Upgrade to Pro for unlimited AI-generated quizzes, advanced flashcards, and priority support
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Active Study Plans</CardTitle>

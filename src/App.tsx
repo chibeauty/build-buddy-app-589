@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { UpgradeButton } from "@/components/UpgradeButton";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -90,6 +91,7 @@ const App = () => (
               </Routes>
             </Suspense>
             <OfflineIndicator />
+            <UpgradeButton />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
