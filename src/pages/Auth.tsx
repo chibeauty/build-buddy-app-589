@@ -91,32 +91,56 @@ export default function Auth() {
 
   const handleSignIn = async (data: SignInInput) => {
     setLoading(true);
-    const { error } = await signIn(data.email, data.password);
-    setLoading(false);
-
-    if (error) {
-      const errorMessage = error.message.toLowerCase();
-      const errorCode = (error as any)?.code || '';
+    
+    try {
+      const { error } = await signIn(data.email, data.password);
       
-      if (errorMessage.includes('email not confirmed') || errorCode === 'email_not_confirmed') {
-        toast({
-          title: 'Email Not Confirmed',
-          description: 'Please check your email and confirm your account before signing in.',
-          variant: 'destructive',
-        });
-      } else if (errorMessage.includes('invalid') || errorCode === 'invalid_credentials') {
-        toast({
-          title: 'Invalid Credentials',
-          description: 'Please check your email and password. If you just signed up, make sure to confirm your email first.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
+      if (error) {
+        console.error('Sign in error:', error);
+        
+        const errorMessage = error.message?.toLowerCase() || '';
+        const errorCode = (error as any)?.code || '';
+        const errorStatus = (error as any)?.status;
+        
+        // Check for email not confirmed
+        if (errorMessage.includes('email not confirmed') || 
+            errorMessage.includes('confirm your email') ||
+            errorCode === 'email_not_confirmed' ||
+            errorStatus === 400) {
+          toast({
+            title: 'Email Not Confirmed',
+            description: 'Please check your email and click the confirmation link before signing in.',
+            variant: 'destructive',
+          });
+        } 
+        // Check for invalid credentials
+        else if (errorMessage.includes('invalid login credentials') || 
+                 errorMessage.includes('invalid email or password') ||
+                 errorCode === 'invalid_credentials') {
+          toast({
+            title: 'Invalid Credentials',
+            description: 'Email or password is incorrect. Please try again.',
+            variant: 'destructive',
+          });
+        }
+        // Catch-all for other errors
+        else {
+          toast({
+            title: 'Sign In Failed',
+            description: error.message || 'Unable to sign in. Please try again.',
+            variant: 'destructive',
+          });
+        }
       }
+    } catch (err) {
+      console.error('Unexpected error during sign in:', err);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
