@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, CreditCard, Gift, DollarSign } from "lucide-react";
 
 interface Profile {
   full_name: string | null;
@@ -239,6 +239,39 @@ export default function Settings() {
             <Button onClick={handleSavePreferences} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Preferences
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription & Billing</CardTitle>
+            <CardDescription>Manage your subscription and payments</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => navigate('/subscription')}
+            >
+              <DollarSign className="mr-2 h-4 w-4" />
+              View Subscription Plans
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => navigate('/billing')}
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              Billing & Usage History
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => navigate('/referrals')}
+            >
+              <Gift className="mr-2 h-4 w-4" />
+              Referral Program
             </Button>
           </CardContent>
         </Card>

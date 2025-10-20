@@ -4,7 +4,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { FileQuestion, Calendar, CreditCard, Flame, Trophy, TrendingUp } from "lucide-react";
+import { FileQuestion, Calendar, CreditCard, Flame, Trophy, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ interface Profile {
   full_name: string | null;
   xp_points: number;
   study_streak: number;
+  ai_credits: number;
 }
 
 interface StudyPlan {
@@ -84,7 +85,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Ready to continue your learning journey?</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Study Streak</CardTitle>
@@ -120,6 +121,19 @@ export default function Dashboard() {
               <div className="text-2xl font-bold">{activePlans.length}</div>
               <p className="text-xs text-muted-foreground">
                 {activePlans.length > 0 ? "In progress" : "Create your first plan"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 cursor-pointer" onClick={() => navigate('/subscription')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">AI Credits</CardTitle>
+              <Zap className="h-4 w-4 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{profile?.ai_credits || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Click to upgrade
               </p>
             </CardContent>
           </Card>
