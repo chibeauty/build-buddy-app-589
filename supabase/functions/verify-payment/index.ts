@@ -99,11 +99,52 @@ serve(async (req) => {
         });
     }
 
+    // Store payment method if authorization exists
+    if (paystackData.data.authorization) {
+      const auth = paystackData.data.authorization;
+      
+      // Check if payment method already exists
+      const { data: existingMethod } = await supabaseClient
+        .from('payment_methods')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('paystack_authorization_code', auth.authorization_code)
+        .maybeSingle();
+
+      if (!existingMethod && auth.authorization_code) {
+        // Check if this is the first payment method
+        const { data: existingMethods } = await supabaseClient
+          .from('payment_methods')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+        await supabaseClient.from('payment_methods').insert({
+          user_id: userId,
+          paystack_authorization_code: auth.authorization_code,
+          card_type: auth.card_type || 'card',
+          last_four: auth.last4 || '',
+          exp_month: auth.exp_month || '',
+          exp_year: auth.exp_year || '',
+          bank: auth.bank || null,
+          brand: auth.brand || 'card',
+          is_default: !existingMethods || existingMethods.length === 0,
+        });
+      }
+    }
+
+    // Get current AI credits
+    const { data: currentProfile } = await supabaseClient
+      .from('profiles')
+      .select('ai_credits')
+      .eq('id', userId)
+      .single();
+
     // Add AI credits to user profile
     await supabaseClient
       .from('profiles')
       .update({
-        ai_credits: plan.ai_credits,
+        ai_credits: (currentProfile?.ai_credits || 0) + plan.ai_credits,
       })
       .eq('id', userId);
 

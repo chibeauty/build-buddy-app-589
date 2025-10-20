@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CreditCard, Calendar, Activity, ArrowLeft } from 'lucide-react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { PaymentMethods } from '@/components/PaymentMethods';
+import { Separator } from '@/components/ui/separator';
 
 export default function Billing() {
   const { user } = useAuth();
@@ -259,6 +261,14 @@ export default function Billing() {
           </Card>
         </div>
 
+        <Separator className="my-8" />
+
+        {/* Payment Methods Section */}
+        <PaymentMethods />
+
+        <Separator className="my-8" />
+
+        {/* Need Help Section */}
         <Card>
           <CardHeader>
             <CardTitle>Need Help?</CardTitle>

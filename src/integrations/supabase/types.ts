@@ -197,6 +197,54 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          bank: string | null
+          brand: string
+          card_type: string
+          created_at: string
+          exp_month: string
+          exp_year: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          last_four: string
+          paystack_authorization_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank?: string | null
+          brand: string
+          card_type: string
+          created_at?: string
+          exp_month: string
+          exp_year: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_four: string
+          paystack_authorization_code: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank?: string | null
+          brand?: string
+          card_type?: string
+          created_at?: string
+          exp_month?: string
+          exp_year?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_four?: string
+          paystack_authorization_code?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           amount: number
