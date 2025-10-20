@@ -95,16 +95,25 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      if (error.message.toLowerCase().includes('email not confirmed')) {
+      const errorMessage = error.message.toLowerCase();
+      const errorCode = (error as any)?.code || '';
+      
+      if (errorMessage.includes('email not confirmed') || errorCode === 'email_not_confirmed') {
         toast({
           title: 'Email Not Confirmed',
           description: 'Please check your email and confirm your account before signing in.',
           variant: 'destructive',
         });
+      } else if (errorMessage.includes('invalid') || errorCode === 'invalid_credentials') {
+        toast({
+          title: 'Invalid Credentials',
+          description: 'Please check your email and password. If you just signed up, make sure to confirm your email first.',
+          variant: 'destructive',
+        });
       } else {
         toast({
           title: 'Error',
-          description: 'Invalid email or password.',
+          description: error.message,
           variant: 'destructive',
         });
       }
