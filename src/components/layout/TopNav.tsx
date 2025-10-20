@@ -1,6 +1,7 @@
 import { Bell, Zap } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { DarkModeToggle } from "@/components/ui/dark-mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +43,9 @@ export function TopNav() {
             Upgrade
           </Button>
 
-          <Button 
+          <DarkModeToggle />
+
+          <Button
             variant="ghost" 
             size="icon" 
             className="relative"
