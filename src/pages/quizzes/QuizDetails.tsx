@@ -120,7 +120,7 @@ export default function QuizDetails() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button className="flex-1" size="lg">
+              <Button className="flex-1" size="lg" onClick={() => navigate(`/quizzes/${id}/take`)}>
                 <Play className="mr-2 h-5 w-5" />
                 Start Quiz
               </Button>
