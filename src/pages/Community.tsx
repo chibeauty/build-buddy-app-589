@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +42,14 @@ export default function Community() {
   const [sharedContent, setSharedContent] = useState<SharedContent[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newGroup, setNewGroup] = useState({
+    name: "",
+    subject: "",
+    description: "",
+    is_public: true,
+  });
 
   useEffect(() => {
     if (user) {
@@ -94,6 +106,58 @@ export default function Community() {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroup.name || !newGroup.subject) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a group name and subject",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { data, error } = await supabase
+        .from("study_groups")
+        .insert({
+          name: newGroup.name,
+          subject: newGroup.subject,
+          description: newGroup.description || null,
+          is_public: newGroup.is_public,
+          created_by: user!.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add creator as a member
+      await supabase.from("group_members").insert({
+        group_id: data.id,
+        user_id: user!.id,
+        role: "admin",
+      });
+
+      toast({
+        title: "Success",
+        description: "Study group created successfully!",
+      });
+
+      setCreateDialogOpen(false);
+      setNewGroup({ name: "", subject: "", description: "", is_public: true });
+      fetchCommunityData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -166,10 +230,67 @@ export default function Community() {
             <h1 className="text-3xl font-bold mb-2">Community</h1>
             <p className="text-muted-foreground">Connect, learn, and grow together</p>
           </div>
-          <Button onClick={() => toast({ title: "Coming soon!", description: "Group creation feature in development" })}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Group
-          </Button>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Group
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Study Group</DialogTitle>
+                <DialogDescription>
+                  Create a new study group to collaborate with other learners
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Group Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Advanced JavaScript Study Group"
+                    value={newGroup.name}
+                    onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    placeholder="e.g., JavaScript"
+                    value={newGroup.subject}
+                    onChange={(e) => setNewGroup({ ...newGroup, subject: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe your study group..."
+                    value={newGroup.description}
+                    onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="public">Public Group</Label>
+                  <Switch
+                    id="public"
+                    checked={newGroup.is_public}
+                    onCheckedChange={(checked) => setNewGroup({ ...newGroup, is_public: checked })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={creating}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateGroup} disabled={creating}>
+                  {creating ? "Creating..." : "Create Group"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="relative">
@@ -227,7 +348,7 @@ export default function Community() {
                 <CardContent className="py-12 text-center">
                   <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground mb-4">No study groups found</p>
-                  <Button onClick={() => toast({ title: "Coming soon!", description: "Group creation feature in development" })}>
+                  <Button onClick={() => setCreateDialogOpen(true)}>
                     Create the First Group
                   </Button>
                 </CardContent>
