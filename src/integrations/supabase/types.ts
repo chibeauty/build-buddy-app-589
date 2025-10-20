@@ -197,8 +197,59 @@ export type Database = {
           },
         ]
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          paystack_reference: string
+          status: string
+          subscription_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          paystack_reference: string
+          status: string
+          subscription_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          paystack_reference?: string
+          status?: string
+          subscription_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          ai_credits: number
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -210,6 +261,7 @@ export type Database = {
           xp_points: number
         }
         Insert: {
+          ai_credits?: number
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -221,6 +273,7 @@ export type Database = {
           xp_points?: number
         }
         Update: {
+          ai_credits?: number
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -348,6 +401,66 @@ export type Database = {
           total_questions?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          total_referrals: number
+          total_rewards: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          total_referrals?: number
+          total_rewards?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          total_referrals?: number
+          total_rewards?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          paid_at: string | null
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_amount: number
+          reward_status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_code: string
+          referred_id: string
+          referrer_id: string
+          reward_amount?: number
+          reward_status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_code?: string
+          referred_id?: string
+          referrer_id?: string
+          reward_amount?: number
+          reward_status?: string
         }
         Relationships: []
       }
@@ -515,6 +628,48 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          ai_credits: number
+          billing_interval: string
+          created_at: string
+          currency: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          ai_credits?: number
+          billing_interval: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          ai_credits?: number
+          billing_interval?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -543,6 +698,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_ai_usage: {
+        Row: {
+          created_at: string
+          credits_used: number
+          feature_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_used?: number
+          feature_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_used?: number
+          feature_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_goals: {
         Row: {
@@ -644,6 +826,59 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          cancelled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          paystack_customer_code: string | null
+          paystack_subscription_code: string | null
+          plan_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          plan_id: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          paystack_customer_code?: string | null
+          paystack_subscription_code?: string | null
+          plan_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -656,6 +891,18 @@ export type Database = {
       check_quiz_achievements: {
         Args: { _score: number; _user_id: string }
         Returns: undefined
+      }
+      deduct_ai_credits: {
+        Args: { _credits: number; _feature_type: string; _user_id: string }
+        Returns: boolean
+      }
+      generate_referral_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      has_ai_credits: {
+        Args: { _credits_needed: number; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
