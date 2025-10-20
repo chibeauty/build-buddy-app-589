@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +18,7 @@ import { Eye, EyeOff, Gift } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Auth() {
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'forgot' | 'reset'>('signin');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -25,13 +26,26 @@ export default function Auth() {
   const { signUp, signIn, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but not if resetting password)
   useEffect(() => {
-    if (user) {
+    if (user && !isResettingPassword) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isResettingPassword]);
+
+  // Check for password reset flow
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPassword(true);
+        setActiveTab('reset');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     // Store referral code in localStorage if present
@@ -65,6 +79,13 @@ export default function Auth() {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
+    },
+  });
+
+  const resetPasswordForm = useForm<{ password: string; confirmPassword: string }>({
+    defaultValues: {
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -172,6 +193,58 @@ export default function Auth() {
         description: 'Password reset email sent. Please check your inbox.',
       });
       setActiveTab('signin');
+    }
+  };
+
+  const handleResetPassword = async (data: { password: string; confirmPassword: string }) => {
+    if (data.password !== data.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (data.password.length < 8) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 8 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: data.password
+      });
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Password Updated!',
+          description: 'Your password has been successfully reset.',
+        });
+        setIsResettingPassword(false);
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Password reset error:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to reset password. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -370,6 +443,52 @@ export default function Auth() {
                 onClick={() => setActiveTab('signin')}
               >
                 Back to Sign In
+              </Button>
+            </form>
+          )}
+
+          {activeTab === 'reset' && (
+            <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="reset-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    {...resetPasswordForm.register('password')}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <PasswordStrength password={resetPasswordForm.watch('password')} />
+                {resetPasswordForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.password.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm">Confirm New Password</Label>
+                <Input
+                  id="reset-confirm"
+                  type="password"
+                  placeholder="••••••••"
+                  {...resetPasswordForm.register('confirmPassword')}
+                />
+                {resetPasswordForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <LoadingSpinner /> : 'Reset Password'}
               </Button>
             </form>
           )}
