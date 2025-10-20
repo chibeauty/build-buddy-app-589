@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { GroupChat } from "@/components/community/GroupChat";
 import { Users, ArrowLeft, BookOpen, Brain, Share2, Copy, Check } from "lucide-react";
 
 interface GroupDetails {
@@ -267,9 +268,14 @@ export default function GroupDetails() {
             )}
 
             {isMember && (
-              <div className="border-t pt-4 space-y-4">
-                <h3 className="font-semibold">Group Content</h3>
-                <div className="space-y-2">
+              <div className="border-t pt-4 space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-4">Group Chat</h3>
+                  <GroupChat groupId={id!} />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-4">Shared Resources</h3>
                   <Card>
                     <CardContent className="py-6 text-center">
                       <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
