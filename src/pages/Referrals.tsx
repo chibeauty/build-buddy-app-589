@@ -119,7 +119,7 @@ export default function Referrals() {
     };
 
     if (urls[platform]) {
-      window.open(urls[platform], '_blank', 'width=600,height=400');
+      window.open(urls[platform], '_blank');
     }
   };
 
