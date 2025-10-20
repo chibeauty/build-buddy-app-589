@@ -79,31 +79,70 @@ export default function Summarize() {
     setIsProcessing(true);
     try {
       toast({
-        title: 'Processing document',
-        description: 'Reading and analyzing your file...',
+        title: 'Extracting content',
+        description: 'Reading your document...',
       });
 
       let content = '';
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
       
-      // Read file content as text
-      content = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          if (!result || result.trim().length < 50) {
-            reject(new Error('File appears to be empty or too short'));
-            return;
-          }
-          resolve(result);
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(file);
+      // Handle different file types
+      if (fileExtension === 'txt' || fileExtension === 'md') {
+        // Plain text files can be read directly
+        content = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            if (!result || result.trim().length < 50) {
+              reject(new Error('File appears to be empty or too short'));
+              return;
+            }
+            resolve(result);
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+      } else if (fileExtension === 'docx' || fileExtension === 'doc') {
+        // For Word documents, we need to extract text properly
+        toast({
+          title: 'Parsing document',
+          description: 'Extracting text from Word document...',
+        });
+        
+        // Read as text and try to extract readable content
+        const rawContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            resolve(result || '');
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file, 'UTF-8');
+        });
+        
+        // Extract readable text from the document
+        // For DOCX files, this is a simplified extraction
+        const textMatch = rawContent.match(/[a-zA-Z0-9\s.,;:!?'"()\-\[\]{}]{100,}/g);
+        if (textMatch && textMatch.length > 0) {
+          content = textMatch.join(' ').replace(/\s+/g, ' ').trim();
+        }
+        
+        if (!content || content.length < 100) {
+          throw new Error('Could not extract readable text from document. Please try uploading a plain text (.txt) or markdown (.md) file instead.');
+        }
+      } else {
+        throw new Error('Unsupported file type. Please upload a TXT or MD file.');
+      }
+
+      toast({
+        title: 'Generating summary',
+        description: 'AI is analyzing your content...',
       });
 
       // Call edge function with content
       const { data, error } = await supabase.functions.invoke('summarize-content', {
         body: {
-          content: content,
+          content: content.substring(0, 50000), // Limit to 50k chars
           includeDefinitions: true,
           includeQuiz: true,
         },
@@ -196,8 +235,8 @@ export default function Summarize() {
             <h1 className="text-4xl font-bold">Smart Note Summarizer</h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Upload your class notes, PDFs, or textbooks and get AI-powered summaries, 
-            key definitions, and instant quizzes
+            Upload your class notes or study materials and get AI-powered summaries, 
+            key definitions, and instant quizzes. For best results, use plain text (.txt) or markdown (.md) files.
           </p>
           {credits !== null && (
             <Badge variant="secondary" className="text-sm">
@@ -223,7 +262,7 @@ export default function Summarize() {
                 type="file"
                 id="file-upload"
                 className="hidden"
-                accept=".txt,.md,.doc,.docx"
+                accept=".txt,.md"
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
@@ -232,7 +271,10 @@ export default function Summarize() {
                   {file ? file.name : 'Click to upload or drag and drop'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  TXT, MD, DOC, or DOCX (max 20MB)
+                  TXT or MD files (max 20MB) - For best results, use plain text
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 text-orange-600">
+                  Note: DOCX files have limited support. Convert to TXT for accurate results.
                 </p>
               </label>
             </div>
