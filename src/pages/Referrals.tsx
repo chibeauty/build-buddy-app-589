@@ -115,17 +115,11 @@ export default function Referrals() {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`,
-      whatsapp: `https://web.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + link)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + link)}`,
     };
 
     if (urls[platform]) {
-      const anchor = document.createElement('a');
-      anchor.href = urls[platform];
-      anchor.target = '_blank';
-      anchor.rel = 'noopener noreferrer';
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
+      window.location.href = urls[platform];
     }
   };
 
