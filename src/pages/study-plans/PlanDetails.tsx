@@ -58,6 +58,42 @@ export default function PlanDetails() {
     }
   };
 
+  const handleStartSession = async () => {
+    try {
+      // Update study streak
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.rpc('update_study_streak', { _user_id: user.id });
+      }
+
+      toast({
+        title: "Session Started!",
+        description: "Your study session has begun. Good luck!",
+      });
+
+      // Award XP for starting a session
+      if (user) {
+        await supabase.rpc('award_xp', { _user_id: user.id, _xp_amount: 5 });
+      }
+
+      // Update plan progress (increment by 5%)
+      const newProgress = Math.min(100, (plan?.progress_percentage || 0) + 5);
+      await supabase
+        .from("study_plans")
+        .update({ progress_percentage: newProgress })
+        .eq("id", id);
+
+      // Refresh plan data
+      fetchPlan();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -153,7 +189,7 @@ export default function PlanDetails() {
           <CardContent>
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">No study sessions yet</p>
-              <Button>
+              <Button onClick={handleStartSession}>
                 <Play className="mr-2 h-4 w-4" />
                 Start First Session
               </Button>
