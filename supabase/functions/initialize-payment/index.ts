@@ -127,11 +127,14 @@ serve(async (req) => {
       throw new Error('Paystack secret key not configured');
     }
 
+    // Ensure the secret key is properly formatted
+    const authHeader = `Bearer ${paystackSecretKey.trim()}`;
+
     // Initialize Paystack transaction
     const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${paystackSecretKey}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
