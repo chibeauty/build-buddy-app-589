@@ -39,10 +39,28 @@ export default function Referrals() {
         .from('referral_codes')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (codeError) throw codeError;
-      setReferralCode(codeData);
+      
+      // If no referral code exists, create one
+      let finalReferralCode = codeData;
+      if (!codeData) {
+        const newCode = `EXH${user?.id.slice(0, 8).toUpperCase()}`;
+        const { data: newReferralCode, error: createError } = await supabase
+          .from('referral_codes')
+          .insert({
+            user_id: user?.id,
+            code: newCode,
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        finalReferralCode = newReferralCode;
+      }
+      
+      setReferralCode(finalReferralCode);
 
       // Fetch referrals
       const { data: referralsData, error: referralsError } = await supabase
