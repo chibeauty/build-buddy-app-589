@@ -4,11 +4,12 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Users, ArrowLeft, BookOpen, Brain } from "lucide-react";
+import { Users, ArrowLeft, BookOpen, Brain, Share2, Copy, Check } from "lucide-react";
 
 interface GroupDetails {
   id: string;
@@ -37,6 +38,7 @@ export default function GroupDetails() {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (id && user) {
@@ -148,6 +150,25 @@ export default function GroupDetails() {
     }
   };
 
+  const handleCopyLink = async () => {
+    const inviteLink = window.location.href;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      toast({
+        title: "Link copied!",
+        description: "Share this link to invite others to join the group",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -197,16 +218,53 @@ export default function GroupDetails() {
                 <Users className="h-4 w-4" />
                 <span>{group.member_count} members</span>
               </div>
-              {isMember ? (
-                <Button variant="outline" onClick={handleLeaveGroup} disabled={joining}>
-                  {joining ? "Leaving..." : "Leave Group"}
+              <div className="flex gap-2">
+                <Button variant="outline" size="icon" onClick={handleCopyLink}>
+                  {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
                 </Button>
-              ) : (
-                <Button onClick={handleJoinGroup} disabled={joining}>
-                  {joining ? "Joining..." : "Join Group"}
-                </Button>
-              )}
+                {isMember ? (
+                  <Button variant="outline" onClick={handleLeaveGroup} disabled={joining}>
+                    {joining ? "Leaving..." : "Leave Group"}
+                  </Button>
+                ) : (
+                  <Button onClick={handleJoinGroup} disabled={joining}>
+                    {joining ? "Joining..." : "Join Group"}
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {group.is_public && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Share2 className="h-4 w-4" />
+                  Invite Link
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={window.location.href}
+                    readOnly
+                    className="font-mono text-xs"
+                  />
+                  <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Share this link with others to invite them to join the group
+                </p>
+              </div>
+            )}
 
             {isMember && (
               <div className="border-t pt-4 space-y-4">
