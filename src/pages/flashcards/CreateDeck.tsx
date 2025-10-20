@@ -281,6 +281,16 @@ export default function CreateDeck() {
                         className="resize-none"
                       />
                     </div>
+                    {!deckData.subject && (
+                      <p className="text-sm text-amber-600 dark:text-amber-500">
+                        Please fill in the Subject field above before generating flashcards.
+                      </p>
+                    )}
+                    {!aiContent.trim() && deckData.subject && (
+                      <p className="text-sm text-muted-foreground">
+                        Paste your content above to generate flashcards.
+                      </p>
+                    )}
                     <Button 
                       type="button" 
                       className="w-full" 
