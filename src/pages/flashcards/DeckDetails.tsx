@@ -103,7 +103,7 @@ export default function DeckDetails() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button className="flex-1" size="lg">
+              <Button className="flex-1" size="lg" onClick={() => navigate(`/flashcards/${id}/study`)}>
                 <Play className="mr-2 h-5 w-5" />
                 Study Now
               </Button>
