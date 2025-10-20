@@ -22,9 +22,16 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
-  const { signUp, signIn, resetPassword } = useAuth();
+  const { signUp, signIn, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     // Store referral code in localStorage if present
@@ -100,13 +107,11 @@ export default function Auth() {
         
         const errorMessage = error.message?.toLowerCase() || '';
         const errorCode = (error as any)?.code || '';
-        const errorStatus = (error as any)?.status;
         
         // Check for email not confirmed
         if (errorMessage.includes('email not confirmed') || 
             errorMessage.includes('confirm your email') ||
-            errorCode === 'email_not_confirmed' ||
-            errorStatus === 400) {
+            errorCode === 'email_not_confirmed') {
           toast({
             title: 'Email Not Confirmed',
             description: 'Please check your email and click the confirmation link before signing in.',
@@ -119,7 +124,7 @@ export default function Auth() {
                  errorCode === 'invalid_credentials') {
           toast({
             title: 'Invalid Credentials',
-            description: 'Email or password is incorrect. Please try again.',
+            description: 'Please double-check your email and password.',
             variant: 'destructive',
           });
         }
@@ -131,6 +136,12 @@ export default function Auth() {
             variant: 'destructive',
           });
         }
+      } else {
+        // Success - show toast and navigation will happen in AuthContext
+        toast({
+          title: 'Welcome back!',
+          description: 'Signing you in...',
+        });
       }
     } catch (err) {
       console.error('Unexpected error during sign in:', err);
