@@ -158,12 +158,17 @@ export default function TakeQuiz() {
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   
-  // Handle options as either array or object
+  // Handle options as either array or object with keys
   const questionOptions = (() => {
     if (!currentQuestion.options) return [];
-    if (Array.isArray(currentQuestion.options)) return currentQuestion.options;
+    if (Array.isArray(currentQuestion.options)) {
+      return currentQuestion.options.map((opt: string) => ({ key: opt, value: opt }));
+    }
     if (typeof currentQuestion.options === 'object') {
-      return Object.values(currentQuestion.options);
+      return Object.entries(currentQuestion.options).map(([key, value]) => ({ 
+        key, 
+        value: String(value) 
+      }));
     }
     return [];
   })();
@@ -208,11 +213,11 @@ export default function TakeQuiz() {
             className="space-y-3"
           >
             {questionOptions.length > 0 ? (
-              questionOptions.map((option: string, index: number) => (
+              questionOptions.map((option, index) => (
                 <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent">
-                  <RadioGroupItem value={option} id={`option-${index}`} />
+                  <RadioGroupItem value={option.key} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                    {option}
+                    <span className="font-medium">{option.key}.</span> {option.value}
                   </Label>
                 </div>
               ))
