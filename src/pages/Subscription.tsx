@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Zap, Crown, Sparkles, Gift } from 'lucide-react';
+import { Check, Zap, Crown, Sparkles, Gift, FileText, BookOpen, HelpCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SubscriptionPlan {
@@ -205,6 +205,57 @@ export default function Subscription() {
             </AlertDescription>
           </Alert>
         )}
+
+        <Card className="max-w-4xl mx-auto bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl">Smart Note Summarizer</CardTitle>
+            </div>
+            <CardDescription className="text-base">
+              Transform your study materials into actionable insights with AI-powered summarization
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-background/50">
+                <div className="p-3 rounded-full bg-primary/10 mb-3">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Instant Summaries</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get concise summaries of lengthy documents and key points extraction
+                </p>
+              </div>
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-background/50">
+                <div className="p-3 rounded-full bg-primary/10 mb-3">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Key Definitions</h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically extract and define important terms from your materials
+                </p>
+              </div>
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-background/50">
+                <div className="p-3 rounded-full bg-primary/10 mb-3">
+                  <HelpCircle className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Auto-Generated Quizzes</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create practice quizzes instantly from your study materials
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 p-4 rounded-lg bg-background/50 border border-primary/20">
+              <p className="text-sm text-center">
+                <span className="font-semibold text-primary">Pro Plans Include:</span> Unlimited document summarization, 
+                support for PDF, DOCX, TXT, MD, and image files, plus priority AI processing
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 md:grid-cols-3">
           {plans.map((plan) => (
