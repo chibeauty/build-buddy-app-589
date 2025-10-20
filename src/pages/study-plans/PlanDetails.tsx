@@ -60,21 +60,29 @@ export default function PlanDetails() {
 
   const handleStartSession = async () => {
     try {
-      // Update study streak
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.rpc('update_study_streak', { _user_id: user.id });
+      if (!user) {
+        throw new Error("User not authenticated");
       }
 
-      toast({
-        title: "Session Started!",
-        description: "Your study session has begun. Good luck!",
-      });
+      // Create study session record
+      const { error: sessionError } = await supabase
+        .from("study_sessions")
+        .insert({
+          study_plan_id: id,
+          session_date: new Date().toISOString().split('T')[0],
+          topic: plan?.subject || "Study Session",
+          duration_minutes: plan?.daily_time_minutes || 30,
+          is_completed: false,
+        });
+
+      if (sessionError) throw sessionError;
+
+      // Update study streak
+      await supabase.rpc('update_study_streak', { _user_id: user.id });
 
       // Award XP for starting a session
-      if (user) {
-        await supabase.rpc('award_xp', { _user_id: user.id, _xp_amount: 5 });
-      }
+      await supabase.rpc('award_xp', { _user_id: user.id, _xp_amount: 5 });
 
       // Update plan progress (increment by 5%)
       const newProgress = Math.min(100, (plan?.progress_percentage || 0) + 5);
@@ -82,6 +90,11 @@ export default function PlanDetails() {
         .from("study_plans")
         .update({ progress_percentage: newProgress })
         .eq("id", id);
+
+      toast({
+        title: "Session Started!",
+        description: "Your study session has begun. Good luck!",
+      });
 
       // Refresh plan data
       fetchPlan();
