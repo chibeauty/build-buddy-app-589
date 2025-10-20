@@ -78,16 +78,16 @@ export default function Summarize() {
 
     setIsProcessing(true);
     try {
-      toast({
-        title: 'Extracting content',
-        description: 'Reading your document...',
-      });
-
       let content = '';
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       
       // Handle different file types
       if (fileExtension === 'txt' || fileExtension === 'md') {
+        toast({
+          title: 'Reading text file',
+          description: 'Processing your document...',
+        });
+        
         // Plain text files can be read directly
         content = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -102,20 +102,24 @@ export default function Summarize() {
           reader.onerror = () => reject(new Error('Failed to read file'));
           reader.readAsText(file);
         });
-      } else if (['pdf', 'docx', 'doc', 'jpg', 'jpeg', 'png', 'webp'].includes(fileExtension || '')) {
-        // Use document parsing for complex formats
+      } else if (['pdf', 'docx', 'doc', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'webp'].includes(fileExtension || '')) {
         toast({
-          title: 'Processing document',
-          description: 'Extracting text from your file...',
+          title: 'Parsing document',
+          description: 'Extracting text from your file... This may take a moment.',
         });
         
-        // Create FormData with the file
-        const formData = new FormData();
-        formData.append('file', file);
+        // Upload file to temporary storage for parsing
+        const fileArrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(fileArrayBuffer);
+        const base64 = btoa(String.fromCharCode(...uint8Array));
         
-        // Call parse-document edge function
-        const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-document', {
-          body: formData,
+        // Call edge function to parse document
+        const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-document-content', {
+          body: {
+            fileContent: base64,
+            fileName: file.name,
+            mimeType: file.type
+          },
         });
         
         if (parseError) {
@@ -123,15 +127,17 @@ export default function Summarize() {
           throw new Error(parseError.message || 'Failed to parse document');
         }
         
-        if (!parseData || !parseData.text) {
+        if (!parseData || !parseData.content) {
           throw new Error('Could not extract text from document');
         }
         
-        content = parseData.text;
+        content = parseData.content;
         
         if (content.length < 50) {
-          throw new Error('Extracted text is too short. The document may be empty or unreadable.');
+          throw new Error('Extracted text is too short. The document may be empty or contains only images.');
         }
+        
+        console.log(`Successfully extracted ${content.length} characters from document`);
       } else {
         throw new Error(`Unsupported file type: .${fileExtension}. Please upload PDF, DOCX, TXT, MD, or image files.`);
       }
