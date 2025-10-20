@@ -69,16 +69,22 @@ export default function CreateDeck() {
       if (error) throw error;
 
       if (data.flashcards && data.flashcards.length > 0) {
-        setCards(data.flashcards);
+        // Map the response to match our card structure
+        const mappedCards = data.flashcards.map((card: any) => ({
+          front: card.front_text || card.front || "",
+          back: card.back_text || card.back || "",
+        }));
+        setCards(mappedCards);
         toast({
           title: "Success",
           description: `Generated ${data.flashcards.length} flashcards! Switch to Manual Entry tab to review and edit.`,
         });
       }
     } catch (error: any) {
+      console.error('Flashcard generation error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate flashcards",
+        description: error.message || "Failed to generate flashcards. Please try again.",
         variant: "destructive",
       });
     } finally {
