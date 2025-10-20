@@ -257,16 +257,21 @@ export default function Auth() {
               <span className="text-2xl font-bold text-primary-foreground">E</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome to ExHub</CardTitle>
-          <CardDescription>Your AI-powered learning companion</CardDescription>
+          <CardTitle className="text-2xl font-bold">
+            {activeTab === 'reset' ? 'Reset Password' : activeTab === 'forgot' ? 'Forgot Password' : 'Welcome to ExHub'}
+          </CardTitle>
+          <CardDescription>
+            {activeTab === 'reset' ? 'Enter your new password below' : activeTab === 'forgot' ? 'We\'ll send you a reset link' : 'Your AI-powered learning companion'}
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          {activeTab !== 'forgot' && activeTab !== 'reset' && (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
 
             <TabsContent value="signin" className="space-y-4">
               <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
@@ -416,6 +421,7 @@ export default function Auth() {
               </form>
             </TabsContent>
           </Tabs>
+          )}
 
           {activeTab === 'forgot' && (
             <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-4 mt-4">
