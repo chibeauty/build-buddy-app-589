@@ -26,6 +26,7 @@ import QuizResults from "./pages/quizzes/QuizResults";
 import CreateDeck from "./pages/flashcards/CreateDeck";
 import DeckDetails from "./pages/flashcards/DeckDetails";
 import StudyMode from "./pages/flashcards/StudyMode";
+import Achievements from "./pages/profile/Achievements";
 import Welcome from "./pages/onboarding/Welcome";
 import LearningStyle from "./pages/onboarding/LearningStyle";
 import Goals from "./pages/onboarding/Goals";
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/flashcards/:id/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
             <Route path="/offline" element={<Offline />} />
