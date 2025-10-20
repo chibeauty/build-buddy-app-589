@@ -10,7 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Loader2, CreditCard, Gift, DollarSign } from "lucide-react";
+import { Loader2, CreditCard, Gift, DollarSign, Calendar } from "lucide-react";
+import { CalendarSyncSettings } from "@/components/calendar/CalendarSyncSettings";
 
 interface Profile {
   full_name: string | null;
@@ -275,6 +276,8 @@ export default function Settings() {
             </Button>
           </CardContent>
         </Card>
+
+        <CalendarSyncSettings />
 
         <Card>
           <CardHeader>

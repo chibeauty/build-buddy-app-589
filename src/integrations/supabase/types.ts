@@ -86,6 +86,105 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          created_at: string
+          end_time: string
+          event_description: string | null
+          event_title: string
+          google_event_id: string | null
+          id: string
+          reminder_sent: boolean
+          source_id: string
+          source_type: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          event_description?: string | null
+          event_title: string
+          google_event_id?: string | null
+          id?: string
+          reminder_sent?: boolean
+          source_id: string
+          source_type: string
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          event_description?: string | null
+          event_title?: string
+          google_event_id?: string | null
+          id?: string
+          reminder_sent?: boolean
+          source_id?: string
+          source_type?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calendar_sync_settings: {
+        Row: {
+          calendar_id: string | null
+          created_at: string
+          device_reminders_enabled: boolean
+          google_access_token: string | null
+          google_calendar_enabled: boolean
+          google_refresh_token: string | null
+          google_token_expiry: string | null
+          id: string
+          reminder_minutes_before: number
+          sync_enabled: boolean
+          sync_flashcard_sessions: boolean
+          sync_quiz_sessions: boolean
+          sync_study_plans: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          created_at?: string
+          device_reminders_enabled?: boolean
+          google_access_token?: string | null
+          google_calendar_enabled?: boolean
+          google_refresh_token?: string | null
+          google_token_expiry?: string | null
+          id?: string
+          reminder_minutes_before?: number
+          sync_enabled?: boolean
+          sync_flashcard_sessions?: boolean
+          sync_quiz_sessions?: boolean
+          sync_study_plans?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string | null
+          created_at?: string
+          device_reminders_enabled?: boolean
+          google_access_token?: string | null
+          google_calendar_enabled?: boolean
+          google_refresh_token?: string | null
+          google_token_expiry?: string | null
+          id?: string
+          reminder_minutes_before?: number
+          sync_enabled?: boolean
+          sync_flashcard_sessions?: boolean
+          sync_quiz_sessions?: boolean
+          sync_study_plans?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_likes: {
         Row: {
           content_id: string

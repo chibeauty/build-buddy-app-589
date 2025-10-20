@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { CalendarSyncButton } from "@/components/calendar/CalendarSyncButton";
 
 interface StudyPlan {
   id: string;
@@ -130,7 +131,10 @@ export default function PlanDetails() {
             <h2 className="text-3xl font-heading font-bold">{plan.title}</h2>
             <p className="text-muted-foreground">{plan.subject}</p>
           </div>
-          <Badge variant="secondary">{plan.goal_type}</Badge>
+          <div className="flex items-center gap-2">
+            <CalendarSyncButton studyPlanId={id} />
+            <Badge variant="secondary">{plan.goal_type}</Badge>
+          </div>
         </div>
 
         <Card>
