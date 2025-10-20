@@ -664,6 +664,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       update_study_streak: {
         Args: { _user_id: string }
         Returns: undefined
