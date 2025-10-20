@@ -649,12 +649,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_xp: {
+        Args: { _user_id: string; _xp_amount: number }
+        Returns: undefined
+      }
+      check_quiz_achievements: {
+        Args: { _score: number; _user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      update_study_streak: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
