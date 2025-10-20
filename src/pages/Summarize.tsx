@@ -102,36 +102,38 @@ export default function Summarize() {
           reader.onerror = () => reject(new Error('Failed to read file'));
           reader.readAsText(file);
         });
-      } else if (fileExtension === 'docx' || fileExtension === 'doc') {
-        // For Word documents, we need to extract text properly
+      } else if (['pdf', 'docx', 'doc', 'jpg', 'jpeg', 'png', 'webp'].includes(fileExtension || '')) {
+        // Use document parsing for complex formats
         toast({
-          title: 'Parsing document',
-          description: 'Extracting text from Word document...',
+          title: 'Processing document',
+          description: 'Extracting text from your file...',
         });
         
-        // Read as text and try to extract readable content
-        const rawContent = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const result = e.target?.result as string;
-            resolve(result || '');
-          };
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsText(file, 'UTF-8');
+        // Create FormData with the file
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Call parse-document edge function
+        const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-document', {
+          body: formData,
         });
         
-        // Extract readable text from the document
-        // For DOCX files, this is a simplified extraction
-        const textMatch = rawContent.match(/[a-zA-Z0-9\s.,;:!?'"()\-\[\]{}]{100,}/g);
-        if (textMatch && textMatch.length > 0) {
-          content = textMatch.join(' ').replace(/\s+/g, ' ').trim();
+        if (parseError) {
+          console.error('Parse error:', parseError);
+          throw new Error(parseError.message || 'Failed to parse document');
         }
         
-        if (!content || content.length < 100) {
-          throw new Error('Could not extract readable text from document. Please try uploading a plain text (.txt) or markdown (.md) file instead.');
+        if (!parseData || !parseData.text) {
+          throw new Error('Could not extract text from document');
+        }
+        
+        content = parseData.text;
+        
+        if (content.length < 50) {
+          throw new Error('Extracted text is too short. The document may be empty or unreadable.');
         }
       } else {
-        throw new Error('Unsupported file type. Please upload a TXT or MD file.');
+        throw new Error(`Unsupported file type: .${fileExtension}. Please upload PDF, DOCX, TXT, MD, or image files.`);
       }
 
       toast({
@@ -235,8 +237,8 @@ export default function Summarize() {
             <h1 className="text-4xl font-bold">Smart Note Summarizer</h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Upload your class notes or study materials and get AI-powered summaries, 
-            key definitions, and instant quizzes. For best results, use plain text (.txt) or markdown (.md) files.
+            Upload your class notes, PDFs, Word documents, or textbooks and get AI-powered summaries, 
+            key definitions, and instant quizzes
           </p>
           {credits !== null && (
             <Badge variant="secondary" className="text-sm">
@@ -262,7 +264,7 @@ export default function Summarize() {
                 type="file"
                 id="file-upload"
                 className="hidden"
-                accept=".txt,.md"
+                accept=".pdf,.txt,.md,.doc,.docx,.jpg,.jpeg,.png,.webp"
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
@@ -271,10 +273,10 @@ export default function Summarize() {
                   {file ? file.name : 'Click to upload or drag and drop'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  TXT or MD files (max 20MB) - For best results, use plain text
+                  PDF, DOCX, TXT, MD, or Images (max 20MB)
                 </p>
-                <p className="text-xs text-muted-foreground mt-1 text-orange-600">
-                  Note: DOCX files have limited support. Convert to TXT for accurate results.
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supports text extraction from documents and images
                 </p>
               </label>
             </div>
