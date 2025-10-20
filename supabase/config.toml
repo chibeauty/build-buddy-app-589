@@ -1,1 +1,13 @@
 project_id = "zsybxembykxiykgkdlth"
+
+[functions.generate-study-plan]
+verify_jwt = true
+
+[functions.generate-quiz]
+verify_jwt = true
+
+[functions.generate-flashcards]
+verify_jwt = true
+
+[functions.summarize-content]
+verify_jwt = true

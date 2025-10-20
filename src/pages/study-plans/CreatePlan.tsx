@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, ArrowLeft, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,56 @@ export default function CreatePlan() {
     dailyTimeMinutes: 60,
     examDate: undefined as Date | undefined,
   });
+
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleAiGenerate = async () => {
+    if (!formData.subject) {
+      toast({
+        title: "Error",
+        description: "Please fill in the subject field first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-study-plan', {
+        body: {
+          subject: formData.subject,
+          goalType: formData.goalType,
+          targetSkillLevel: formData.targetSkillLevel,
+          dailyTimeMinutes: formData.dailyTimeMinutes,
+          examDate: formData.examDate?.toISOString(),
+        }
+      });
+
+      if (error) throw error;
+
+      // Auto-fill title and description from AI response
+      if (data.studyPlan) {
+        setFormData({
+          ...formData,
+          title: data.studyPlan.title || formData.title,
+          description: data.studyPlan.description || formData.description,
+        });
+
+        toast({
+          title: "Success",
+          description: "AI-generated study plan suggestions added!",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate study plan",
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +166,16 @@ export default function CreatePlan() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleAiGenerate}
+                  disabled={aiGenerating || !formData.subject}
+                  className="w-full mt-2"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {aiGenerating ? "Generating..." : "Get AI Suggestions"}
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

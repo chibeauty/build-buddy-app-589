@@ -41,8 +41,30 @@ export default function GenerateQuiz() {
     e.preventDefault();
     if (!user) return;
 
+    if (!formData.contentText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide content to generate quiz from",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      // Call AI to generate questions
+      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('generate-quiz', {
+        body: {
+          content: formData.contentText,
+          subject: formData.subject,
+          difficulty: formData.difficulty,
+          questionCount: formData.questionCount,
+          questionTypes: ['multiple_choice', 'true_false'],
+        }
+      });
+
+      if (aiError) throw aiError;
+
       // Create the quiz record
       const { data: quiz, error: quizError } = await supabase
         .from("quizzes")
@@ -52,37 +74,36 @@ export default function GenerateQuiz() {
           subject: formData.subject,
           description: formData.description,
           difficulty_level: formData.difficulty,
-          total_questions: formData.questionCount,
+          total_questions: aiResponse.questions.length,
         })
         .select()
         .single();
 
       if (quizError) throw quizError;
 
-      // In a real implementation, this would call an AI service to generate questions
-      // For now, we'll create placeholder questions
-      const sampleQuestions = Array.from({ length: formData.questionCount }, (_, i) => ({
+      // Format questions for database
+      const questionsData = aiResponse.questions.map((q: any) => ({
         quiz_id: quiz.id,
-        question_text: `Sample question ${i + 1}`,
-        question_type: "multiple_choice",
-        correct_answer: "A",
-        options: { A: "Option A", B: "Option B", C: "Option C", D: "Option D" },
-        explanation: "This is a placeholder question that would be AI-generated.",
+        question_text: q.question_text,
+        question_type: q.question_type,
+        correct_answer: q.correct_answer,
+        options: q.options,
+        explanation: q.explanation,
       }));
 
-      const { error: questionsError } = await supabase.from("quiz_questions").insert(sampleQuestions);
+      const { error: questionsError } = await supabase.from("quiz_questions").insert(questionsData);
 
       if (questionsError) throw questionsError;
 
       toast({
         title: "Success",
-        description: "Quiz generated successfully!",
+        description: `Quiz with ${aiResponse.questions.length} questions generated successfully!`,
       });
       navigate(`/quizzes/${quiz.id}`);
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to generate quiz",
         variant: "destructive",
       });
     } finally {

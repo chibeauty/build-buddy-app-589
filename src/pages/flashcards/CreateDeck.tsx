@@ -35,6 +35,56 @@ export default function CreateDeck() {
   ]);
 
   const [aiContent, setAiContent] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleAiGenerate = async () => {
+    if (!aiContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide content to generate flashcards from",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!deckData.subject) {
+      toast({
+        title: "Error",
+        description: "Please fill in the deck subject first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-flashcards', {
+        body: {
+          content: aiContent,
+          subject: deckData.subject,
+          cardCount: 10,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.flashcards && data.flashcards.length > 0) {
+        setCards(data.flashcards);
+        toast({
+          title: "Success",
+          description: `Generated ${data.flashcards.length} flashcards! Switch to Manual Entry tab to review and edit.`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate flashcards",
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const addCard = () => {
     setCards([...cards, { front: "", back: "" }]);
@@ -231,12 +281,17 @@ export default function CreateDeck() {
                         className="resize-none"
                       />
                     </div>
-                    <Button type="button" className="w-full" disabled>
+                    <Button 
+                      type="button" 
+                      className="w-full" 
+                      onClick={handleAiGenerate}
+                      disabled={aiGenerating || !aiContent.trim() || !deckData.subject}
+                    >
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Generate Flashcards (Coming Soon)
+                      {aiGenerating ? "Generating..." : "Generate Flashcards"}
                     </Button>
                     <p className="text-sm text-muted-foreground text-center">
-                      AI-powered flashcard generation will be available in a future update
+                      AI will create flashcards from your content. You can review and edit them in the Manual Entry tab.
                     </p>
                   </TabsContent>
                 </Tabs>
