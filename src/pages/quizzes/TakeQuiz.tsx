@@ -157,6 +157,11 @@ export default function TakeQuiz() {
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  
+  // Ensure options is always an array
+  const questionOptions = Array.isArray(currentQuestion.options) 
+    ? currentQuestion.options 
+    : [];
 
   return (
     <div className="container max-w-3xl py-8">
@@ -197,14 +202,18 @@ export default function TakeQuiz() {
             onValueChange={handleAnswerSelect}
             className="space-y-3"
           >
-            {currentQuestion.options?.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent">
-                <RadioGroupItem value={option} id={`option-${index}`} />
-                <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                  {option}
-                </Label>
-              </div>
-            ))}
+            {questionOptions.length > 0 ? (
+              questionOptions.map((option: string, index: number) => (
+                <div key={index} className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent">
+                  <RadioGroupItem value={option} id={`option-${index}`} />
+                  <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                    {option}
+                  </Label>
+                </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground">No options available for this question.</p>
+            )}
           </RadioGroup>
         </CardContent>
       </Card>
