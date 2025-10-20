@@ -21,8 +21,11 @@ import CreatePlan from "./pages/study-plans/CreatePlan";
 import PlanDetails from "./pages/study-plans/PlanDetails";
 import GenerateQuiz from "./pages/quizzes/GenerateQuiz";
 import QuizDetails from "./pages/quizzes/QuizDetails";
+import TakeQuiz from "./pages/quizzes/TakeQuiz";
+import QuizResults from "./pages/quizzes/QuizResults";
 import CreateDeck from "./pages/flashcards/CreateDeck";
 import DeckDetails from "./pages/flashcards/DeckDetails";
+import StudyMode from "./pages/flashcards/StudyMode";
 import Welcome from "./pages/onboarding/Welcome";
 import LearningStyle from "./pages/onboarding/LearningStyle";
 import Goals from "./pages/onboarding/Goals";
@@ -51,9 +54,12 @@ const App = () => (
           <Route path="/quizzes" element={<ProtectedRoute><Quizzes /></ProtectedRoute>} />
           <Route path="/quizzes/generate" element={<ProtectedRoute><GenerateQuiz /></ProtectedRoute>} />
           <Route path="/quizzes/:id" element={<ProtectedRoute><QuizDetails /></ProtectedRoute>} />
+          <Route path="/quizzes/:id/take" element={<ProtectedRoute><TakeQuiz /></ProtectedRoute>} />
+          <Route path="/quizzes/:id/results" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
           <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
           <Route path="/flashcards/create" element={<ProtectedRoute><CreateDeck /></ProtectedRoute>} />
           <Route path="/flashcards/:id" element={<ProtectedRoute><DeckDetails /></ProtectedRoute>} />
+          <Route path="/flashcards/:id/study" element={<ProtectedRoute><StudyMode /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
