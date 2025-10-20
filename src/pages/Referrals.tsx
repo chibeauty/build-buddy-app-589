@@ -65,7 +65,7 @@ export default function Referrals() {
       // Fetch referrals
       const { data: referralsData, error: referralsError } = await supabase
         .from('referrals')
-        .select('*, profiles!referrals_referred_id_fkey(full_name)')
+        .select('*, profiles!referred_id(full_name)')
         .eq('referrer_id', user?.id)
         .order('created_at', { ascending: false });
 
