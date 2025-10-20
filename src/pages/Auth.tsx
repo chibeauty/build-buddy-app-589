@@ -95,11 +95,19 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      toast({
-        title: 'Error',
-        description: 'Invalid email or password.',
-        variant: 'destructive',
-      });
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        toast({
+          title: 'Email Not Confirmed',
+          description: 'Please check your email and confirm your account before signing in.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Invalid email or password.',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
