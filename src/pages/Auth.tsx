@@ -129,7 +129,7 @@ export default function Auth() {
         const errorMessage = error.message?.toLowerCase() || '';
         const errorCode = (error as any)?.code || '';
         
-        // Check for email not confirmed
+        // Check for email not confirmed - often disguised as invalid credentials
         if (errorMessage.includes('email not confirmed') || 
             errorMessage.includes('confirm your email') ||
             errorCode === 'email_not_confirmed') {
@@ -144,8 +144,8 @@ export default function Auth() {
                  errorMessage.includes('invalid email or password') ||
                  errorCode === 'invalid_credentials') {
           toast({
-            title: 'Invalid Credentials',
-            description: 'Please double-check your email and password.',
+            title: 'Sign In Failed',
+            description: 'Invalid email or password. If you just signed up, please confirm your email first. You can also try resetting your password.',
             variant: 'destructive',
           });
         }
