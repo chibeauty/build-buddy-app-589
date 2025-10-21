@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply, Smile } from 'lucide-react';
+import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply, Smile, Mic } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { MediaRecorderComponent } from './MediaRecorder';
 
 interface Attachment {
   name: string;
@@ -75,6 +76,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [mentionStartPos, setMentionStartPos] = useState(0);
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
+  const [showMediaRecorder, setShowMediaRecorder] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -336,6 +338,60 @@ export function GroupChat({ groupId }: GroupChatProps) {
     }
 
     return attachments;
+  };
+
+  const handleMediaRecording = async (blob: Blob, type: 'audio' | 'video') => {
+    if (!user) return;
+
+    setUploading(true);
+    try {
+      const fileExt = type === 'audio' ? 'webm' : 'webm';
+      const fileName = `${user.id}/${Date.now()}-${type}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('group-attachments')
+        .upload(fileName, blob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('group-attachments')
+        .getPublicUrl(fileName);
+
+      const attachment: Attachment = {
+        name: `${type}-message.${fileExt}`,
+        url: publicUrl,
+        type: type === 'audio' ? 'audio/webm' : 'video/webm',
+        size: blob.size,
+      };
+
+      // Send message with media attachment
+      const { error } = await supabase
+        .from('group_messages')
+        .insert({
+          group_id: groupId,
+          user_id: user.id,
+          message: type === 'audio' ? '🎤 Voice message' : '🎥 Video message',
+          attachments: [attachment] as any,
+        });
+
+      if (error) throw error;
+
+      setShowMediaRecorder(false);
+      toast({
+        title: 'Success',
+        description: `${type === 'audio' ? 'Voice note' : 'Video message'} sent`,
+      });
+    } catch (error: any) {
+      console.error('Error uploading media:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload media',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -759,6 +815,15 @@ export function GroupChat({ groupId }: GroupChatProps) {
       </ScrollArea>
 
       <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/50">
+        {showMediaRecorder && (
+          <div className="mb-3">
+            <MediaRecorderComponent
+              onRecordingComplete={handleMediaRecording}
+              onCancel={() => setShowMediaRecorder(false)}
+            />
+          </div>
+        )}
+
         {replyingTo && (
           <div className="mb-2 p-2 bg-muted rounded-lg flex items-start gap-2">
             <Reply className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -822,9 +887,19 @@ export function GroupChat({ groupId }: GroupChatProps) {
             variant="outline"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || sending}
+            disabled={uploading || sending || showMediaRecorder}
           >
             <Paperclip className="h-4 w-4" />
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setShowMediaRecorder(!showMediaRecorder)}
+            disabled={uploading || sending}
+          >
+            <Mic className="h-4 w-4" />
           </Button>
           
           <div className="flex-1 relative">
@@ -878,7 +953,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
         </div>
         
         <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line. Use @ to mention members. Max 20MB per file.
+          Press Enter to send, Shift+Enter for new line. Use @ to mention members. Click <Mic className="h-3 w-3 inline" /> for voice/video messages.
         </p>
       </form>
     </div>
