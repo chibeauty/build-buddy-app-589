@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply, Smile, Mic } from 'lucide-react';
+import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply, Smile, Mic, Languages } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { MediaRecorderComponent } from './MediaRecorder';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Attachment {
   name: string;
@@ -52,6 +53,8 @@ interface Message {
   profiles?: {
     full_name: string | null;
   } | null;
+  translatedText?: string;
+  showTranslation?: boolean;
 }
 
 interface GroupChatProps {
@@ -77,6 +80,8 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
   const [showMediaRecorder, setShowMediaRecorder] = useState(false);
+  const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
+  const [userLanguage, setUserLanguage] = useState<string>('English');
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -521,6 +526,62 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
   const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '🎉'];
 
+  const languages = [
+    'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 
+    'Russian', 'Japanese', 'Korean', 'Chinese', 'Arabic', 'Hindi',
+    'Dutch', 'Swedish', 'Polish', 'Turkish', 'Vietnamese', 'Thai'
+  ];
+
+  const handleTranslateMessage = async (messageId: string, messageText: string) => {
+    if (translatingMessageId === messageId) return;
+
+    setTranslatingMessageId(messageId);
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-message', {
+        body: { 
+          text: messageText,
+          targetLanguage: userLanguage
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast({
+          title: 'Translation Error',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update message with translation
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, translatedText: data.translatedText, showTranslation: true }
+          : msg
+      ));
+
+    } catch (error: any) {
+      console.error('Translation error:', error);
+      toast({
+        title: 'Translation Failed',
+        description: error.message || 'Could not translate message',
+        variant: 'destructive',
+      });
+    } finally {
+      setTranslatingMessageId(null);
+    }
+  };
+
+  const toggleTranslation = (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, showTranslation: !msg.showTranslation }
+        : msg
+    ));
+  };
+
   const handleMessageInput = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setNewMessage(text);
@@ -629,8 +690,21 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
   return (
     <div className="flex flex-col h-[500px] border rounded-lg bg-card">
-      <div className="p-4 border-b bg-muted/50">
+      <div className="p-4 border-b bg-muted/50 flex items-center justify-between">
         <h3 className="font-semibold">Group Chat</h3>
+        <div className="flex items-center gap-2">
+          <Languages className="h-4 w-4 text-muted-foreground" />
+          <Select value={userLanguage} onValueChange={setUserLanguage}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {languages.map(lang => (
+                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 p-4">
@@ -666,13 +740,32 @@ export function GroupChat({ groupId }: GroupChatProps) {
                       : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
                     <p className="text-xs font-medium opacity-70">
                       {message.user_id === user?.id
                         ? 'You'
                         : message.profiles?.full_name || 'Unknown User'}
                     </p>
                     <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 opacity-60 hover:opacity-100"
+                        onClick={() => {
+                          if (message.translatedText) {
+                            toggleTranslation(message.id);
+                          } else {
+                            handleTranslateMessage(message.id, message.message);
+                          }
+                        }}
+                        disabled={translatingMessageId === message.id}
+                      >
+                        {translatingMessageId === message.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Languages className="h-3 w-3" />
+                        )}
+                      </Button>
                       <Popover open={showEmojiPicker === message.id} onOpenChange={(open) => setShowEmojiPicker(open ? message.id : null)}>
                         <PopoverTrigger asChild>
                           <Button
@@ -726,9 +819,22 @@ export function GroupChat({ groupId }: GroupChatProps) {
                     </div>
                   )}
                   
-                  <p className="text-sm whitespace-pre-wrap break-words">
-                    {renderMessageText(message.message, message.mentions)}
-                  </p>
+                  <div className="space-y-1">
+                    {message.showTranslation && message.translatedText ? (
+                      <>
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {message.translatedText}
+                        </p>
+                        <p className="text-xs opacity-50 italic">
+                          Original: {message.message}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {renderMessageText(message.message, message.mentions)}
+                      </p>
+                    )}
+                  </div>
                   
                   {message.attachments && message.attachments.length > 0 && (
                     <div className="mt-2 space-y-2">
