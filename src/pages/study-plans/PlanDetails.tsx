@@ -24,11 +24,23 @@ interface StudyPlan {
   created_at: string;
 }
 
+interface StudySession {
+  id: string;
+  study_plan_id: string;
+  session_date: string;
+  topic: string;
+  duration_minutes: number;
+  is_completed: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
 export default function PlanDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [plan, setPlan] = useState<StudyPlan | null>(null);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,10 +55,22 @@ export default function PlanDetails() {
         .from("study_plans")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("Study plan not found");
+      }
       setPlan(data);
+
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from("study_sessions")
+        .select("*")
+        .eq("study_plan_id", id)
+        .order("session_date", { ascending: false });
+
+      if (sessionsError) throw sessionsError;
+      setSessions(sessionsData || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -185,16 +209,60 @@ export default function PlanDetails() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Study Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No study sessions yet</p>
-              <Button onClick={handleStartSession}>
+            <div className="flex items-center justify-between">
+              <CardTitle>Study Sessions</CardTitle>
+              <Button onClick={handleStartSession} size="sm">
                 <Play className="mr-2 h-4 w-4" />
-                Start First Session
+                Start New Session
               </Button>
             </div>
+          </CardHeader>
+          <CardContent>
+            {sessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No study sessions yet</p>
+                <Button onClick={handleStartSession}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Start First Session
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{session.topic}</h4>
+                        {session.is_completed && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Play className="h-3 w-3" />
+                            Completed
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(session.session_date).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {session.duration_minutes} min
+                        </span>
+                      </div>
+                      {session.notes && (
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                          {session.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
