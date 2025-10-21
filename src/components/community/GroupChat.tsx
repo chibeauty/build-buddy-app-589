@@ -544,15 +544,17 @@ export function GroupChat({ groupId }: GroupChatProps) {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function invocation error:', error);
+        throw new Error(error.message || 'Failed to connect to translation service');
+      }
 
       if (data?.error) {
-        toast({
-          title: 'Translation Error',
-          description: data.error,
-          variant: 'destructive',
-        });
-        return;
+        throw new Error(data.error);
+      }
+
+      if (!data?.translatedText) {
+        throw new Error('No translation returned');
       }
 
       // Update message with translation
@@ -562,11 +564,16 @@ export function GroupChat({ groupId }: GroupChatProps) {
           : msg
       ));
 
+      toast({
+        title: 'Translated',
+        description: `Translated to ${userLanguage}`,
+      });
+
     } catch (error: any) {
       console.error('Translation error:', error);
       toast({
         title: 'Translation Failed',
-        description: error.message || 'Could not translate message',
+        description: error.message || 'Could not translate message. Please try again.',
         variant: 'destructive',
       });
     } finally {
