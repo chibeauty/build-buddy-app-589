@@ -110,28 +110,43 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
   const fetchGroupMembers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: membersData, error: membersError } = await supabase
         .from('group_members')
-        .select(`
-          id,
-          user_id,
-          profiles:user_id (
-            full_name
-          )
-        `)
+        .select('id, user_id')
         .eq('group_id', groupId);
 
-      if (error) throw error;
+      if (membersError) throw membersError;
 
-      const members = data?.map(member => ({
+      if (!membersData || membersData.length === 0) {
+        setGroupMembers([]);
+        return;
+      }
+
+      // Fetch profiles separately
+      const userIds = membersData.map(m => m.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Map profiles to members
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p.full_name]) || []);
+      const members = membersData.map(member => ({
         id: member.id,
         user_id: member.user_id,
-        full_name: (member.profiles as any)?.full_name || 'Unknown User',
-      })) || [];
+        full_name: profilesMap.get(member.user_id) || 'Unknown User',
+      }));
 
       setGroupMembers(members);
     } catch (error) {
       console.error('Error fetching group members:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load group members',
+        variant: 'destructive',
+      });
     }
   };
 
