@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X } from 'lucide-react';
+import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Attachment {
@@ -21,6 +21,15 @@ interface Message {
   message: string;
   created_at: string;
   attachments?: Attachment[];
+  reply_to?: string | null;
+  replied_message?: {
+    id: string;
+    message: string;
+    user_id: string;
+    profiles?: {
+      full_name: string | null;
+    } | null;
+  } | null;
   profiles?: {
     full_name: string | null;
   } | null;
@@ -39,6 +48,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -84,6 +94,10 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
       // Fetch profiles for unique user IDs
       const userIds = [...new Set(messagesData?.map(m => m.user_id) || [])];
+      
+      // Get unique reply_to IDs to fetch replied messages
+      const replyToIds = [...new Set(messagesData?.filter(m => m.reply_to).map(m => m.reply_to) || [])];
+      
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name')
@@ -91,13 +105,33 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
       if (profilesError) throw profilesError;
 
+      // Fetch replied messages if there are any
+      let repliedMessagesMap = new Map();
+      if (replyToIds.length > 0) {
+        const { data: repliedMessages } = await supabase
+          .from('group_messages')
+          .select('id, message, user_id')
+          .in('id', replyToIds);
+        
+        if (repliedMessages) {
+          repliedMessagesMap = new Map(repliedMessages.map(m => [m.id, m]));
+        }
+      }
+
       // Map profiles to messages
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-      const messagesWithProfiles = messagesData?.map(msg => ({
-        ...msg,
-        profiles: profilesMap.get(msg.user_id) || null,
-        attachments: (msg.attachments as unknown as Attachment[]) || [],
-      })) || [];
+      const messagesWithProfiles = messagesData?.map(msg => {
+        const repliedMsg = msg.reply_to ? repliedMessagesMap.get(msg.reply_to) : null;
+        return {
+          ...msg,
+          profiles: profilesMap.get(msg.user_id) || null,
+          attachments: (msg.attachments as unknown as Attachment[]) || [],
+          replied_message: repliedMsg ? {
+            ...repliedMsg,
+            profiles: profilesMap.get(repliedMsg.user_id) || null,
+          } : null,
+        };
+      }) || [];
 
       setMessages(messagesWithProfiles);
       setTimeout(scrollToBottom, 100);
@@ -198,12 +232,14 @@ export function GroupChat({ groupId }: GroupChatProps) {
           user_id: user.id,
           message: newMessage.trim() || 'Sent an attachment',
           attachments: attachments as any,
+          reply_to: replyingTo?.id || null,
         });
 
       if (error) throw error;
 
       setNewMessage('');
       setSelectedFiles([]);
+      setReplyingTo(null);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -266,11 +302,35 @@ export function GroupChat({ groupId }: GroupChatProps) {
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="text-xs font-medium mb-1 opacity-70">
-                    {message.user_id === user?.id
-                      ? 'You'
-                      : message.profiles?.full_name || 'Unknown User'}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-xs font-medium opacity-70">
+                      {message.user_id === user?.id
+                        ? 'You'
+                        : message.profiles?.full_name || 'Unknown User'}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 opacity-60 hover:opacity-100"
+                      onClick={() => setReplyingTo(message)}
+                    >
+                      <Reply className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  {message.replied_message && (
+                    <div className="mb-2 p-2 rounded bg-background/20 border-l-2 border-current">
+                      <p className="text-xs opacity-70 mb-1">
+                        Replying to {message.replied_message.user_id === user?.id 
+                          ? 'You' 
+                          : message.replied_message.profiles?.full_name || 'Unknown User'}
+                      </p>
+                      <p className="text-xs truncate opacity-80">
+                        {message.replied_message.message}
+                      </p>
+                    </div>
+                  )}
+                  
                   <p className="text-sm whitespace-pre-wrap break-words">
                     {message.message}
                   </p>
@@ -327,6 +387,31 @@ export function GroupChat({ groupId }: GroupChatProps) {
       </ScrollArea>
 
       <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/50">
+        {replyingTo && (
+          <div className="mb-2 p-2 bg-muted rounded-lg flex items-start gap-2">
+            <Reply className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium">
+                Replying to {replyingTo.user_id === user?.id 
+                  ? 'yourself' 
+                  : replyingTo.profiles?.full_name || 'Unknown User'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {replyingTo.message}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 p-0 flex-shrink-0"
+              onClick={() => setReplyingTo(null)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+        
         {selectedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
             {selectedFiles.map((file, index) => (

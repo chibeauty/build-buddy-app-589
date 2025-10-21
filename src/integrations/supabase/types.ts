@@ -339,6 +339,7 @@ export type Database = {
           group_id: string
           id: string
           message: string
+          reply_to: string | null
           updated_at: string | null
           user_id: string
         }
@@ -348,6 +349,7 @@ export type Database = {
           group_id: string
           id?: string
           message: string
+          reply_to?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -357,6 +359,7 @@ export type Database = {
           group_id?: string
           id?: string
           message?: string
+          reply_to?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -366,6 +369,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "group_messages"
             referencedColumns: ["id"]
           },
         ]
