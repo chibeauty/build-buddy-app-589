@@ -5,14 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+
+interface Attachment {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
 
 interface Message {
   id: string;
   user_id: string;
   message: string;
   created_at: string;
+  attachments?: Attachment[];
   profiles?: {
     full_name: string | null;
   } | null;
@@ -29,7 +37,10 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -85,6 +96,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
       const messagesWithProfiles = messagesData?.map(msg => ({
         ...msg,
         profiles: profilesMap.get(msg.user_id) || null,
+        attachments: (msg.attachments as unknown as Attachment[]) || [],
       })) || [];
 
       setMessages(messagesWithProfiles);
@@ -107,24 +119,91 @@ export function GroupChat({ groupId }: GroupChatProps) {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      const maxSize = 20 * 1024 * 1024; // 20MB
+      if (file.size > maxSize) {
+        toast({
+          title: 'File too large',
+          description: `${file.name} exceeds 20MB limit`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      return true;
+    });
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (): Promise<Attachment[]> => {
+    if (!user || selectedFiles.length === 0) return [];
+
+    setUploading(true);
+    const attachments: Attachment[] = [];
+
+    try {
+      for (const file of selectedFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('group-attachments')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('group-attachments')
+          .getPublicUrl(fileName);
+
+        attachments.push({
+          name: file.name,
+          url: publicUrl,
+          type: file.type,
+          size: file.size,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload files',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
+
+    return attachments;
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newMessage.trim() || !user) return;
+    if ((!newMessage.trim() && selectedFiles.length === 0) || !user) return;
 
     setSending(true);
     try {
+      const attachments = await uploadFiles();
+
       const { error } = await supabase
         .from('group_messages')
         .insert({
           group_id: groupId,
           user_id: user.id,
-          message: newMessage.trim(),
+          message: newMessage.trim() || 'Sent an attachment',
+          attachments: attachments as any,
         });
 
       if (error) throw error;
 
       setNewMessage('');
+      setSelectedFiles([]);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -135,6 +214,21 @@ export function GroupChat({ groupId }: GroupChatProps) {
     } finally {
       setSending(false);
     }
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;
+    if (type.startsWith('video/')) return <Video className="h-4 w-4" />;
+    if (type.startsWith('audio/')) return <Music className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   if (loading) {
@@ -180,6 +274,46 @@ export function GroupChat({ groupId }: GroupChatProps) {
                   <p className="text-sm whitespace-pre-wrap break-words">
                     {message.message}
                   </p>
+                  
+                  {message.attachments && message.attachments.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {message.attachments.map((attachment, idx) => (
+                        <div key={idx}>
+                          {attachment.type.startsWith('image/') ? (
+                            <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                              <img 
+                                src={attachment.url} 
+                                alt={attachment.name}
+                                className="max-w-xs rounded border cursor-pointer hover:opacity-90"
+                              />
+                            </a>
+                          ) : attachment.type.startsWith('video/') ? (
+                            <video 
+                              src={attachment.url} 
+                              controls 
+                              className="max-w-xs rounded border"
+                            />
+                          ) : attachment.type.startsWith('audio/') ? (
+                            <audio src={attachment.url} controls className="w-full max-w-xs" />
+                          ) : (
+                            <a 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 bg-background/50 rounded border hover:bg-background/80"
+                            >
+                              {getFileIcon(attachment.type)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs truncate">{attachment.name}</p>
+                                <p className="text-xs opacity-60">{formatFileSize(attachment.size)}</p>
+                              </div>
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <p className="text-xs mt-1 opacity-60">
                     {formatDistanceToNow(new Date(message.created_at), {
                       addSuffix: true,
@@ -193,7 +327,49 @@ export function GroupChat({ groupId }: GroupChatProps) {
       </ScrollArea>
 
       <form onSubmit={handleSendMessage} className="p-4 border-t bg-muted/50">
+        {selectedFiles.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {selectedFiles.map((file, index) => (
+              <div 
+                key={index}
+                className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg text-sm"
+              >
+                {getFileIcon(file.type)}
+                <span className="truncate max-w-[150px]">{file.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 p-0"
+                  onClick={() => removeFile(index)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        
         <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip"
+          />
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || sending}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          
           <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -207,21 +383,23 @@ export function GroupChat({ groupId }: GroupChatProps) {
               }
             }}
           />
+          
           <Button
             type="submit"
             size="icon"
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && selectedFiles.length === 0) || sending || uploading}
             className="self-end"
           >
-            {sending ? (
+            {sending || uploading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
             )}
           </Button>
         </div>
+        
         <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line
+          Press Enter to send, Shift+Enter for new line. Max 20MB per file.
         </p>
       </form>
     </div>
