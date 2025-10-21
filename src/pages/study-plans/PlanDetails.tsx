@@ -66,8 +66,7 @@ export default function PlanDetails() {
         throw new Error("User not authenticated");
       }
 
-      // Create study session record
-      const { error: sessionError } = await supabase
+      const { data: sessionData, error: sessionError } = await supabase
         .from("study_sessions")
         .insert({
           study_plan_id: id,
@@ -75,30 +74,15 @@ export default function PlanDetails() {
           topic: plan?.subject || "Study Session",
           duration_minutes: plan?.daily_time_minutes || 30,
           is_completed: false,
-        });
+        })
+        .select()
+        .single();
 
       if (sessionError) throw sessionError;
 
-      // Update study streak
       await supabase.rpc('update_study_streak', { _user_id: user.id });
 
-      // Award XP for starting a session
-      await supabase.rpc('award_xp', { _user_id: user.id, _xp_amount: 5 });
-
-      // Update plan progress (increment by 5%)
-      const newProgress = Math.min(100, (plan?.progress_percentage || 0) + 5);
-      await supabase
-        .from("study_plans")
-        .update({ progress_percentage: newProgress })
-        .eq("id", id);
-
-      toast({
-        title: "Session Started!",
-        description: "Your study session has begun. Good luck!",
-      });
-
-      // Refresh plan data
-      fetchPlan();
+      navigate(`/study-plans/session/${sessionData.id}`);
     } catch (error: any) {
       toast({
         title: "Error",

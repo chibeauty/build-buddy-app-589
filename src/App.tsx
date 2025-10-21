@@ -31,6 +31,7 @@ const Offline = lazy(() => import("./pages/Offline"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CreatePlan = lazy(() => import("./pages/study-plans/CreatePlan"));
 const PlanDetails = lazy(() => import("./pages/study-plans/PlanDetails"));
+const StudySession = lazy(() => import("./pages/study-plans/StudySession"));
 const GenerateQuiz = lazy(() => import("./pages/quizzes/GenerateQuiz"));
 const QuizDetails = lazy(() => import("./pages/quizzes/QuizDetails"));
 const TakeQuiz = lazy(() => import("./pages/quizzes/TakeQuiz"));
@@ -74,6 +75,7 @@ const App = () => (
                 <Route path="/study-plans" element={<ProtectedRoute><StudyPlans /></ProtectedRoute>} />
                 <Route path="/study-plans/create" element={<ProtectedRoute><CreatePlan /></ProtectedRoute>} />
                 <Route path="/study-plans/:id" element={<ProtectedRoute><PlanDetails /></ProtectedRoute>} />
+                <Route path="/study-plans/session/:sessionId" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
                 <Route path="/quizzes" element={<ProtectedRoute><Quizzes /></ProtectedRoute>} />
                 <Route path="/quizzes/generate" element={<ProtectedRoute><GenerateQuiz /></ProtectedRoute>} />
                 <Route path="/quizzes/:id" element={<ProtectedRoute><QuizDetails /></ProtectedRoute>} />
