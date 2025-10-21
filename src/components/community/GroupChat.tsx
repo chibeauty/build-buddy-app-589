@@ -702,12 +702,12 @@ export function GroupChat({ groupId }: GroupChatProps) {
         <div className="flex items-center gap-2">
           <Languages className="h-4 w-4 text-muted-foreground" />
           <Select value={userLanguage} onValueChange={setUserLanguage}>
-            <SelectTrigger className="w-[140px] h-8 text-sm">
+            <SelectTrigger className="w-[140px] h-8 text-sm bg-background">
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
+            <SelectContent className="max-h-[300px] z-[100] bg-popover border border-border shadow-lg">
               {languages.map(lang => (
-                <SelectItem key={lang} value={lang} className="cursor-pointer">
+                <SelectItem key={lang} value={lang} className="cursor-pointer hover:bg-accent">
                   {lang}
                 </SelectItem>
               ))}
