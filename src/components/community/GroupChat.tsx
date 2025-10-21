@@ -74,9 +74,11 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionStartPos, setMentionStartPos] = useState(0);
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -84,8 +86,8 @@ export function GroupChat({ groupId }: GroupChatProps) {
     fetchMessages();
     fetchGroupMembers();
 
-    // Set up real-time subscription
-    const channel = supabase
+    // Set up real-time subscription for messages
+    const messagesChannel = supabase
       .channel('group-messages')
       .on(
         'postgres_changes',
@@ -103,8 +105,27 @@ export function GroupChat({ groupId }: GroupChatProps) {
       )
       .subscribe();
 
+    // Set up presence channel for typing indicators
+    const presenceChannel = supabase
+      .channel(`group-typing:${groupId}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const typing = new Map<string, string>();
+        
+        Object.entries(state).forEach(([key, presences]) => {
+          const presence = presences[0] as any;
+          if (presence.user_id !== user.id && presence.is_typing) {
+            typing.set(presence.user_id, presence.full_name);
+          }
+        });
+        
+        setTypingUsers(typing);
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(presenceChannel);
     };
   }, [groupId, user]);
 
@@ -339,6 +360,14 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
       if (error) throw error;
 
+      // Clear typing status
+      const channel = supabase.channel(`group-typing:${groupId}`);
+      await channel.track({
+        user_id: user.id,
+        full_name: user.user_metadata?.full_name || 'Someone',
+        is_typing: false,
+      });
+
       setNewMessage('');
       setSelectedFiles([]);
       setReplyingTo(null);
@@ -436,9 +465,33 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
   const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '🎉'];
 
-  const handleMessageInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleMessageInput = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setNewMessage(text);
+
+    // Broadcast typing status
+    if (text.trim() && user) {
+      const channel = supabase.channel(`group-typing:${groupId}`);
+      await channel.track({
+        user_id: user.id,
+        full_name: user.user_metadata?.full_name || 'Someone',
+        is_typing: true,
+      });
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set new timeout to clear typing status after 3 seconds
+      typingTimeoutRef.current = setTimeout(async () => {
+        await channel.track({
+          user_id: user.id,
+          full_name: user.user_metadata?.full_name || 'Someone',
+          is_typing: false,
+        });
+      }, 3000);
+    }
 
     // Check for @ mentions
     const cursorPos = e.target.selectionStart;
@@ -531,7 +584,8 @@ export function GroupChat({ groupId }: GroupChatProps) {
               No messages yet. Start the conversation!
             </div>
           ) : (
-            messages.map((message) => (
+            <>
+              {messages.map((message) => (
               <div
                 key={message.id}
                 ref={(el) => {
@@ -685,7 +739,21 @@ export function GroupChat({ groupId }: GroupChatProps) {
                   )}
                 </div>
               </div>
-            ))
+            ))}
+            
+            {typingUsers.size > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                <div className="flex gap-1">
+                  <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
+                  <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
+                  <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
+                </div>
+                <span>
+                  {Array.from(typingUsers.values()).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                </span>
+              </div>
+            )}
+          </>
           )}
         </div>
       </ScrollArea>
