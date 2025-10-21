@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
-import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply } from 'lucide-react';
+import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Reply, Smile } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface Attachment {
   name: string;
@@ -15,12 +17,20 @@ interface Attachment {
   size: number;
 }
 
+interface Reaction {
+  emoji: string;
+  count: number;
+  users: string[];
+  hasReacted: boolean;
+}
+
 interface Message {
   id: string;
   user_id: string;
   message: string;
   created_at: string;
   attachments?: Attachment[];
+  reactions?: Reaction[];
   reply_to?: string | null;
   replied_message?: {
     id: string;
@@ -50,6 +60,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -94,6 +105,37 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
       if (messagesError) throw messagesError;
 
+      // Fetch reactions for all messages
+      const messageIds = messagesData?.map(m => m.id) || [];
+      const { data: reactionsData } = await supabase
+        .from('group_message_reactions')
+        .select('message_id, emoji, user_id')
+        .in('message_id', messageIds);
+
+      // Process reactions by message
+      const reactionsByMessage = new Map<string, Reaction[]>();
+      reactionsData?.forEach(reaction => {
+        const existing = reactionsByMessage.get(reaction.message_id) || [];
+        const emojiReaction = existing.find(r => r.emoji === reaction.emoji);
+        
+        if (emojiReaction) {
+          emojiReaction.count++;
+          emojiReaction.users.push(reaction.user_id);
+          if (reaction.user_id === user?.id) {
+            emojiReaction.hasReacted = true;
+          }
+        } else {
+          existing.push({
+            emoji: reaction.emoji,
+            count: 1,
+            users: [reaction.user_id],
+            hasReacted: reaction.user_id === user?.id,
+          });
+        }
+        
+        reactionsByMessage.set(reaction.message_id, existing);
+      });
+
       // Fetch profiles for unique user IDs
       const userIds = [...new Set(messagesData?.map(m => m.user_id) || [])];
       
@@ -128,6 +170,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
           ...msg,
           profiles: profilesMap.get(msg.user_id) || null,
           attachments: (msg.attachments as unknown as Attachment[]) || [],
+          reactions: reactionsByMessage.get(msg.id) || [],
           replied_message: repliedMsg ? {
             ...repliedMsg,
             profiles: profilesMap.get(repliedMsg.user_id) || null,
@@ -282,6 +325,52 @@ export function GroupChat({ groupId }: GroupChatProps) {
     }
   };
 
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user already reacted with this emoji
+      const message = messages.find(m => m.id === messageId);
+      const existingReaction = message?.reactions?.find(r => r.emoji === emoji && r.hasReacted);
+
+      if (existingReaction) {
+        // Remove reaction
+        const { error } = await supabase
+          .from('group_message_reactions')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', user.id)
+          .eq('emoji', emoji);
+
+        if (error) throw error;
+      } else {
+        // Add reaction
+        const { error } = await supabase
+          .from('group_message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            emoji: emoji,
+          });
+
+        if (error) throw error;
+      }
+
+      // Refresh messages to show updated reactions
+      await fetchMessages();
+      setShowEmojiPicker(null);
+    } catch (error: any) {
+      console.error('Error handling reaction:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update reaction',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '🎉'];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -334,14 +423,42 @@ export function GroupChat({ groupId }: GroupChatProps) {
                         ? 'You'
                         : message.profiles?.full_name || 'Unknown User'}
                     </p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 opacity-60 hover:opacity-100"
-                      onClick={() => setReplyingTo(message)}
-                    >
-                      <Reply className="h-3 w-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Popover open={showEmojiPicker === message.id} onOpenChange={(open) => setShowEmojiPicker(open ? message.id : null)}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-60 hover:opacity-100"
+                          >
+                            <Smile className="h-3 w-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2" align="end">
+                          <div className="flex gap-1">
+                            {quickEmojis.map((emoji) => (
+                              <Button
+                                key={emoji}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-lg hover:scale-125 transition-transform"
+                                onClick={() => handleReaction(message.id, emoji)}
+                              >
+                                {emoji}
+                              </Button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 opacity-60 hover:opacity-100"
+                        onClick={() => setReplyingTo(message)}
+                      >
+                        <Reply className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   
                   {message.replied_message && (
@@ -408,6 +525,25 @@ export function GroupChat({ groupId }: GroupChatProps) {
                       addSuffix: true,
                     })}
                   </p>
+                  
+                  {message.reactions && message.reactions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {message.reactions.map((reaction) => (
+                        <Button
+                          key={reaction.emoji}
+                          variant="ghost"
+                          size="sm"
+                          className={`h-6 px-2 text-xs ${
+                            reaction.hasReacted ? 'bg-accent' : ''
+                          }`}
+                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                        >
+                          <span className="mr-1">{reaction.emoji}</span>
+                          <span>{reaction.count}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
