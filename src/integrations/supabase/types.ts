@@ -367,6 +367,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           bank: string | null
@@ -1109,6 +1145,16 @@ export type Database = {
       check_quiz_achievements: {
         Args: { _score: number; _user_id: string }
         Returns: undefined
+      }
+      create_notification: {
+        Args: {
+          _link?: string
+          _message: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: string
       }
       deduct_ai_credits: {
         Args: { _credits: number; _feature_type: string; _user_id: string }

@@ -3,49 +3,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Bell, Check, Info, Gift, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useNavigate } from 'react-router-dom';
+
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+}
 
 export default function Notifications() {
-  // Mock notifications data - in production, this would come from the database
-  const notifications = [
-    {
-      id: '1',
-      type: 'achievement',
-      title: 'New Achievement Unlocked!',
-      message: 'You earned the "Week Warrior" badge for maintaining a 7-day study streak',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      read: false,
-      icon: Gift,
-    },
-    {
-      id: '2',
-      type: 'study_reminder',
-      title: 'Study Reminder',
-      message: 'Time to review your flashcards for Mathematics',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      read: false,
-      icon: Bell,
-    },
-    {
-      id: '3',
-      type: 'referral',
-      title: 'Referral Reward',
-      message: 'Your friend joined using your referral link! You earned 100 AI credits',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      read: true,
-      icon: TrendingUp,
-    },
-    {
-      id: '4',
-      type: 'info',
-      title: 'Weekly Progress Report',
-      message: 'Your study progress this week: 5 quizzes completed, 120 flashcards reviewed',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-      read: true,
-      icon: Info,
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const formatTimeAgo = (timestamp: string) => {
     const now = Date.now();
@@ -61,10 +65,81 @@ export default function Notifications() {
     return `${days}d ago`;
   };
 
-  const handleMarkAllRead = () => {
-    // In production, this would update the database
-    console.log('Marking all as read');
+  const handleMarkAsRead = async (notificationId: string, link: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(notifications.map(n => 
+        n.id === notificationId ? { ...n, is_read: true } : n
+      ));
+
+      if (link) {
+        navigate(link);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+
+      toast({
+        title: 'Success',
+        description: 'All notifications marked as read',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'achievement':
+        return Gift;
+      case 'study_reminder':
+        return Bell;
+      case 'referral':
+        return TrendingUp;
+      default:
+        return Info;
+    }
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <LoadingSpinner size="lg" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -97,11 +172,12 @@ export default function Notifications() {
             </Card>
           ) : (
             notifications.map((notification) => {
-              const Icon = notification.icon;
+              const Icon = getIcon(notification.type);
               return (
                 <Card 
                   key={notification.id} 
-                  className={`transition-all hover:shadow-md ${!notification.read ? 'bg-accent/5 border-accent/20' : ''}`}
+                  className={`transition-all hover:shadow-md cursor-pointer ${!notification.is_read ? 'bg-accent/5 border-accent/20' : ''}`}
+                  onClick={() => handleMarkAsRead(notification.id, notification.link)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-4">
@@ -122,11 +198,11 @@ export default function Notifications() {
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-base">{notification.title}</CardTitle>
                           <div className="flex items-center gap-2">
-                            {!notification.read && (
+                            {!notification.is_read && (
                               <Badge variant="default" className="h-2 w-2 rounded-full p-0" />
                             )}
                             <span className="text-xs text-muted-foreground">
-                              {formatTimeAgo(notification.timestamp)}
+                              {formatTimeAgo(notification.created_at)}
                             </span>
                           </div>
                         </div>
