@@ -392,7 +392,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
       const existingReaction = message?.reactions?.find(r => r.emoji === emoji && r.hasReacted);
 
       if (existingReaction) {
-        // Remove reaction
+        // Remove reaction if clicking the same emoji
         const { error } = await supabase
           .from('group_message_reactions')
           .delete()
@@ -402,7 +402,14 @@ export function GroupChat({ groupId }: GroupChatProps) {
 
         if (error) throw error;
       } else {
-        // Add reaction
+        // First, remove any existing reaction from this user on this message
+        await supabase
+          .from('group_message_reactions')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', user.id);
+
+        // Then add the new reaction
         const { error } = await supabase
           .from('group_message_reactions')
           .insert({
