@@ -9,12 +9,19 @@ import { Send, Loader2, Paperclip, File, Image as ImageIcon, Music, Video, X, Re
 import { formatDistanceToNow } from 'date-fns';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface Attachment {
   name: string;
   url: string;
   type: string;
   size: number;
+}
+
+interface GroupMember {
+  id: string;
+  user_id: string;
+  full_name: string;
 }
 
 interface Reaction {
@@ -31,6 +38,7 @@ interface Message {
   created_at: string;
   attachments?: Attachment[];
   reactions?: Reaction[];
+  mentions?: string[];
   reply_to?: string | null;
   replied_message?: {
     id: string;
@@ -61,6 +69,11 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionStartPos, setMentionStartPos] = useState(0);
+  const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -69,6 +82,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
     if (!user) return;
 
     fetchMessages();
+    fetchGroupMembers();
 
     // Set up real-time subscription
     const channel = supabase
@@ -93,6 +107,33 @@ export function GroupChat({ groupId }: GroupChatProps) {
       supabase.removeChannel(channel);
     };
   }, [groupId, user]);
+
+  const fetchGroupMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('group_members')
+        .select(`
+          id,
+          user_id,
+          profiles:user_id (
+            full_name
+          )
+        `)
+        .eq('group_id', groupId);
+
+      if (error) throw error;
+
+      const members = data?.map(member => ({
+        id: member.id,
+        user_id: member.user_id,
+        full_name: (member.profiles as any)?.full_name || 'Unknown User',
+      })) || [];
+
+      setGroupMembers(members);
+    } catch (error) {
+      console.error('Error fetching group members:', error);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -278,6 +319,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
           message: newMessage.trim() || 'Sent an attachment',
           attachments: attachments as any,
           reply_to: replyingTo?.id || null,
+          mentions: selectedMentions.length > 0 ? selectedMentions : null,
         });
 
       if (error) throw error;
@@ -285,6 +327,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
       setNewMessage('');
       setSelectedFiles([]);
       setReplyingTo(null);
+      setSelectedMentions([]);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -370,6 +413,80 @@ export function GroupChat({ groupId }: GroupChatProps) {
   };
 
   const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '🎉'];
+
+  const handleMessageInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setNewMessage(text);
+
+    // Check for @ mentions
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = text.substring(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtPos !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtPos + 1);
+      // Only show mentions if there's no space after @
+      if (!textAfterAt.includes(' ')) {
+        setMentionSearch(textAfterAt.toLowerCase());
+        setMentionStartPos(lastAtPos);
+        setShowMentions(true);
+        return;
+      }
+    }
+    
+    setShowMentions(false);
+  };
+
+  const handleMentionSelect = (member: GroupMember) => {
+    const beforeMention = newMessage.substring(0, mentionStartPos);
+    const afterMention = newMessage.substring(mentionStartPos + mentionSearch.length + 1);
+    const newText = `${beforeMention}@${member.full_name} ${afterMention}`;
+    
+    setNewMessage(newText);
+    setSelectedMentions(prev => [...prev, member.user_id]);
+    setShowMentions(false);
+    setMentionSearch('');
+  };
+
+  const filteredMembers = groupMembers.filter(member => 
+    member.full_name.toLowerCase().includes(mentionSearch) &&
+    member.user_id !== user?.id
+  );
+
+  const renderMessageText = (text: string, mentions?: string[]) => {
+    if (!mentions || mentions.length === 0) {
+      return <span className="whitespace-pre-wrap break-words">{text}</span>;
+    }
+
+    // Create a map of user IDs to names for quick lookup
+    const mentionedUsers = groupMembers.filter(m => mentions.includes(m.user_id));
+    const mentionMap = new Map(mentionedUsers.map(m => [m.full_name, m.user_id]));
+
+    // Split text by @ mentions
+    const parts = text.split(/(@\w+(?:\s+\w+)*)/g);
+    
+    return (
+      <span className="whitespace-pre-wrap break-words">
+        {parts.map((part, index) => {
+          if (part.startsWith('@')) {
+            const name = part.substring(1).trim();
+            const userId = mentionMap.get(name);
+            if (userId) {
+              return (
+                <span
+                  key={index}
+                  className="bg-accent/30 px-1 rounded font-medium"
+                >
+                  {part}
+                </span>
+              );
+            }
+          }
+          return <span key={index}>{part}</span>;
+        })}
+      </span>
+    );
+  };
 
   if (loading) {
     return (
@@ -478,7 +595,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
                   )}
                   
                   <p className="text-sm whitespace-pre-wrap break-words">
-                    {message.message}
+                    {renderMessageText(message.message, message.mentions)}
                   </p>
                   
                   {message.attachments && message.attachments.length > 0 && (
@@ -600,7 +717,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
           </div>
         )}
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           <input
             ref={fileInputRef}
             type="file"
@@ -620,19 +737,41 @@ export function GroupChat({ groupId }: GroupChatProps) {
             <Paperclip className="h-4 w-4" />
           </Button>
           
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="resize-none"
-            rows={2}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage(e);
-              }
-            }}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              value={newMessage}
+              onChange={handleMessageInput}
+              placeholder="Type a message... Use @ to mention someone"
+              className="resize-none"
+              rows={2}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !showMentions) {
+                  e.preventDefault();
+                  handleSendMessage(e);
+                }
+              }}
+            />
+            
+            {showMentions && filteredMembers.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto z-50">
+                <Command>
+                  <CommandList>
+                    <CommandGroup heading="Mention member">
+                      {filteredMembers.map((member) => (
+                        <CommandItem
+                          key={member.user_id}
+                          onSelect={() => handleMentionSelect(member)}
+                          className="cursor-pointer"
+                        >
+                          <span>@{member.full_name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </div>
+            )}
+          </div>
           
           <Button
             type="submit"
@@ -649,7 +788,7 @@ export function GroupChat({ groupId }: GroupChatProps) {
         </div>
         
         <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line. Max 20MB per file.
+          Press Enter to send, Shift+Enter for new line. Use @ to mention members. Max 20MB per file.
         </p>
       </form>
     </div>

@@ -370,6 +370,7 @@ export type Database = {
           created_at: string | null
           group_id: string
           id: string
+          mentions: string[] | null
           message: string
           reply_to: string | null
           updated_at: string | null
@@ -380,6 +381,7 @@ export type Database = {
           created_at?: string | null
           group_id: string
           id?: string
+          mentions?: string[] | null
           message: string
           reply_to?: string | null
           updated_at?: string | null
@@ -390,6 +392,7 @@ export type Database = {
           created_at?: string | null
           group_id?: string
           id?: string
+          mentions?: string[] | null
           message?: string
           reply_to?: string | null
           updated_at?: string | null
