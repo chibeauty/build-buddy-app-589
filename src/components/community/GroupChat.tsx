@@ -49,8 +49,10 @@ export function GroupChat({ groupId }: GroupChatProps) {
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
     if (!user) return;
@@ -267,6 +269,19 @@ export function GroupChat({ groupId }: GroupChatProps) {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const scrollToMessage = (messageId: string) => {
+    const messageElement = messageRefs.current.get(messageId);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedMessageId(messageId);
+      
+      // Remove highlight after 2 seconds
+      setTimeout(() => {
+        setHighlightedMessageId(null);
+      }, 2000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -291,15 +306,26 @@ export function GroupChat({ groupId }: GroupChatProps) {
             messages.map((message) => (
               <div
                 key={message.id}
+                ref={(el) => {
+                  if (el) {
+                    messageRefs.current.set(message.id, el);
+                  } else {
+                    messageRefs.current.delete(message.id);
+                  }
+                }}
                 className={`flex flex-col ${
                   message.user_id === user?.id ? 'items-end' : 'items-start'
                 }`}
               >
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${
+                  className={`max-w-[70%] rounded-lg p-3 transition-all duration-300 ${
                     message.user_id === user?.id
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted'
+                  } ${
+                    highlightedMessageId === message.id
+                      ? 'ring-2 ring-accent scale-105'
+                      : ''
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -319,7 +345,10 @@ export function GroupChat({ groupId }: GroupChatProps) {
                   </div>
                   
                   {message.replied_message && (
-                    <div className="mb-2 p-2 rounded bg-background/20 border-l-2 border-current">
+                    <div 
+                      className="mb-2 p-2 rounded bg-background/20 border-l-2 border-current cursor-pointer hover:bg-background/30 transition-colors"
+                      onClick={() => scrollToMessage(message.replied_message!.id)}
+                    >
                       <p className="text-xs opacity-70 mb-1">
                         Replying to {message.replied_message.user_id === user?.id 
                           ? 'You' 
