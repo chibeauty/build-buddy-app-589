@@ -16,7 +16,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Visit `http://localhost:5173` to see the app running.
+Visit `[http://localhost:5173](https://build-buddy-app-589.lovable.app/?utm_source=lovable-editor)` to see the app running.
 
 ## 📚 Documentation
 
