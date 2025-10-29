@@ -1,6 +1,32 @@
 # ExHub - AI-Powered Learning Platform
 
-ExHub is a Progressive Web App (PWA) that revolutionizes learning through AI-powered personalized study plans, intelligent quizzes, and interactive flashcards.
+**ExHub** is an AI-powered Progressive Web App that revolutionizes learning through personalized study plans, intelligent quizzes, flashcards, and community-driven education.
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Add your Supabase credentials
+
+# Start development server
+npm run dev
+```
+
+Visit `http://localhost:5173` to see the app running.
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `/docs` folder:
+
+- **[Setup Guide](docs/SETUP.md)** - Detailed installation and configuration
+- **[Architecture](docs/ARCHITECTURE.md)** - Project structure and technical decisions  
+- **[API Reference](docs/API.md)** - Edge function endpoints and usage
+- **[Deployment](docs/DEPLOYMENT.md)** - Production deployment instructions
+- **[Testing](tests/README.md)** - Testing strategy and guidelines
 
 ## 📋 Table of Contents
 
@@ -297,12 +323,10 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/summarize-content' \
   -d '{"text": "Sample content to summarize"}'
 ```
 
-## 📚 Documentation
+## 🔗 Additional Resources
 
-- [Deployment Guide](./DEPLOYMENT.md) - Comprehensive deployment instructions
 - [Lovable Docs](https://docs.lovable.dev) - Lovable platform documentation
 - [Supabase Docs](https://supabase.com/docs) - Supabase backend documentation
-- [Product Requirements](./custom-knowledge) - Detailed PRD and implementation plan
 
 ## 🚀 Deployment
 
@@ -315,7 +339,7 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/summarize-content' \
 
 ### Manual Deployment
 
-For detailed deployment instructions including custom domains, rollback procedures, and monitoring, see [DEPLOYMENT.md](./DEPLOYMENT.md)
+For detailed deployment instructions including custom domains, rollback procedures, and monitoring, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## 📝 License
 
