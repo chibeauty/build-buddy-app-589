@@ -127,8 +127,13 @@ export default function Summarize() {
           throw new Error(parseError.message || 'Failed to parse document');
         }
         
+        // Check if the response contains an error (for 400 status)
+        if (parseData?.error) {
+          throw new Error(parseData.error);
+        }
+        
         if (!parseData || !parseData.content) {
-          throw new Error('Could not extract text from document');
+          throw new Error('Could not extract text from document. Please try a different file format.');
         }
         
         content = parseData.content;

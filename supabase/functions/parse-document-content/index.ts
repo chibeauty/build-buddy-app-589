@@ -92,7 +92,15 @@ serve(async (req) => {
         throw new Error('Could not extract sufficient text from Word document. Please try saving as PDF or TXT format.');
       }
     } else if (['jpg', 'jpeg', 'png', 'webp'].includes(fileExtension || '')) {
-      throw new Error('Image OCR is not yet supported. Please convert your image to text using an OCR tool first, or upload a PDF with embedded text.');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Image OCR is not currently supported. Please upload a text-based document (PDF, DOCX, TXT, or MD) instead.' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     } else {
       throw new Error(`Unsupported file type: .${fileExtension}`);
     }
