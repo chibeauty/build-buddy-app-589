@@ -36,34 +36,18 @@ serve(async (req) => {
     let extractedText = '';
 
     if (fileExtension === 'pdf') {
-      // Parse PDF - extract text between stream objects
-      const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-      
-      // Extract text content from PDF streams
-      const streamRegex = /stream\s*(.*?)\s*endstream/gs;
-      const matches = text.matchAll(streamRegex);
-      
-      const textParts: string[] = [];
-      for (const match of matches) {
-        const streamContent = match[1];
-        // Try to extract readable text
-        const readableText = streamContent.match(/[a-zA-Z0-9\s.,;:!?'"()\-\[\]{}]+/g);
-        if (readableText) {
-          textParts.push(...readableText);
+      // Use pdf-parse library for proper PDF text extraction via dynamic import
+      try {
+        const { default: pdfParse } = await import('npm:pdf-parse@1.1.1');
+        const data = await pdfParse(bytes);
+        extractedText = data.text.trim();
+        
+        if (!extractedText || extractedText.length < 50) {
+          throw new Error('Could not extract sufficient text from PDF. The file may be image-based, scanned, or protected.');
         }
-      }
-      
-      // Also try to extract text objects
-      const textObjectRegex = /\((.*?)\)\s*Tj/g;
-      const textMatches = text.matchAll(textObjectRegex);
-      for (const match of textMatches) {
-        textParts.push(match[1]);
-      }
-      
-      extractedText = textParts.join(' ').replace(/\s+/g, ' ').trim();
-      
-      if (!extractedText || extractedText.length < 100) {
-        throw new Error('Could not extract sufficient text from PDF. The file may be image-based or use unsupported encoding.');
+      } catch (error) {
+        console.error('PDF parsing error:', error);
+        throw new Error('Failed to parse PDF. The file may be corrupted, image-based, or use unsupported encryption.');
       }
     } else if (fileExtension === 'docx' || fileExtension === 'doc') {
       // Parse DOCX - it's a ZIP file containing XML
