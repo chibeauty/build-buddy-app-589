@@ -11,7 +11,7 @@ export function MainLayout({ children, showBottomNav = true }: MainLayoutProps) 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
-      <main className="flex-1 pb-16 md:pb-0">
+      <main className="flex-1 pb-20 md:pb-4">
         {children}
       </main>
       {showBottomNav && <BottomNav />}
