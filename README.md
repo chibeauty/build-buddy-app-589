@@ -33,11 +33,14 @@ Comprehensive documentation is available in the `/docs` folder:
 - [Problem Statement](#-problem-statement)
 - [Approach](#-approach)
 - [Features](#-features)
+- [Screenshots](#-screenshots)
 - [Tech Stack](#️-tech-stack)
 - [Setup Instructions](#-setup-instructions)
 - [Environment Configuration](#-environment-configuration)
 - [Usage Guide](#-usage-guide)
+- [Future Improvements](#-future-improvements)
 - [Testing](#-testing)
+- [Team Roles](#-team-roles)
 - [Documentation](#-documentation)
 - [Deployment](#-deployment)
 - [License](#-license)
@@ -88,6 +91,39 @@ ExHub addresses these challenges through an integrated AI-powered solution:
 - **Community**: Study groups and content sharing
 - **Progress Analytics**: Detailed insights into learning patterns
 - **PWA Support**: Install as mobile app with offline capabilities
+
+## 📸 Screenshots
+
+### Authentication & Onboarding Flow
+![Authentication Screen](docs/screenshots/auth-screen.png)
+*Clean and intuitive login/signup interface with social authentication options*
+
+![Learning Style Assessment](docs/screenshots/onboarding-learning-style.png)
+*Personalized onboarding experience to understand user preferences*
+
+### Dashboard & Study Management
+![Dashboard](docs/screenshots/dashboard.png)
+*Centralized hub showing study plans, progress, achievements, and quick actions*
+
+![Study Plan Creation](docs/screenshots/study-plan-create.png)
+*AI-powered study plan generator with customizable goals and schedules*
+
+### AI-Powered Learning Tools
+![Quiz Generator](docs/screenshots/quiz-generate.png)
+*Generate intelligent quizzes from any document or text content*
+
+![Quiz Taking Interface](docs/screenshots/quiz-take.png)
+*Interactive quiz interface with progress tracking and instant feedback*
+
+![Flashcard Study Mode](docs/screenshots/flashcard-study.png)
+*Spaced repetition flashcard system with smooth card flip animations*
+
+### Community & Gamification
+![Community Hub](docs/screenshots/community.png)
+*Collaborative learning through study groups and shared resources*
+
+![Achievements](docs/screenshots/achievements.png)
+*Gamified experience with XP, badges, and study streak tracking*
 
 ## 🛠️ Tech Stack
 
@@ -252,6 +288,73 @@ npx supabase secrets set OPENAI_API_KEY=your_openai_api_key
 3. Join relevant groups
 4. Share resources and participate in discussions
 
+## 🔮 Future Improvements
+
+ExHub is continuously evolving. Here are planned enhancements for upcoming releases:
+
+### Short-Term Roadmap (Q1 2025)
+
+#### Enhanced AI Features
+- **AI Tutor Chat**: Real-time conversational AI assistant for instant help with study materials
+- **Voice Learning**: Text-to-speech for flashcards and summaries to support auditory learners
+- **Advanced Analytics**: Predictive insights on optimal study times and personalized recommendations
+
+#### Learning Experience
+- **Study Rooms**: Virtual co-working spaces with video/audio for real-time collaboration
+- **Adaptive Difficulty**: Dynamic quiz difficulty adjustment based on performance patterns
+- **Learning Paths**: Pre-built curriculum tracks for popular certifications and skills
+
+#### Community Features
+- **Live Study Sessions**: Scheduled group study sessions with screen sharing
+- **Mentorship Program**: Connect experienced learners with beginners
+- **Content Marketplace**: Allow creators to share and monetize premium study materials
+
+### Medium-Term Roadmap (Q2-Q3 2025)
+
+#### Platform Expansion
+- **Mobile Native Apps**: iOS and Android native applications with enhanced performance
+- **Offline AI**: Edge computing for basic AI features without internet connection
+- **Multi-language Support**: Interface and content generation in 10+ languages
+
+#### Integration & Ecosystem
+- **LMS Integration**: Connect with Canvas, Moodle, Blackboard for seamless content sync
+- **Calendar Apps**: Deep integration with Google Calendar, Outlook, Apple Calendar
+- **Note-Taking Apps**: Two-way sync with Notion, Evernote, OneNote
+- **Browser Extensions**: Quick capture of web content for quiz/flashcard generation
+
+#### Accessibility & Inclusivity
+- **Screen Reader Optimization**: Full WCAG 2.1 AA compliance
+- **Dyslexia-Friendly Mode**: Custom fonts, spacing, and reading assistance
+- **Keyboard Navigation**: Complete app control without mouse/touch
+
+### Long-Term Vision (Q4 2025+)
+
+#### Advanced Personalization
+- **Neuroscience-Based Learning**: Incorporate cognitive science research for optimal retention
+- **Biometric Integration**: Study pattern optimization based on focus levels (via wearables)
+- **Learning Style Evolution**: AI that adapts as user learning preferences change over time
+
+#### Enterprise & Education
+- **Schools Dashboard**: Teacher portal for class management and progress tracking
+- **Corporate Training**: Custom solutions for employee onboarding and skill development
+- **API Access**: Developer API for third-party integrations and custom applications
+
+#### Research & Development
+- **Learning Effectiveness Research**: Partner with educational institutions for impact studies
+- **Open Source Contributions**: Release core learning algorithms for community improvement
+- **AI Model Fine-Tuning**: Custom models trained specifically on educational content
+
+### Community-Requested Features
+- **Dark Mode Scheduling**: Automatic theme switching based on time of day
+- **Pomodoro Timer Integration**: Built-in focus timer with study plan synchronization
+- **Achievement Sharing**: Social media integration for celebrating learning milestones
+- **Custom Theme Builder**: Allow users to create and share custom color schemes
+- **Study Music Integration**: Curated focus music from Spotify/Apple Music
+- **Handwriting Recognition**: Upload handwritten notes for AI processing
+- **Citation Manager**: Automatic bibliography generation for research projects
+
+**Want to suggest a feature?** Open an issue or join our [Discord community](https://discord.com/channels/1119885301872070706/1280461670979993613) to share your ideas!
+
 ## 🧪 Testing
 
 ### Basic Functionality Tests
@@ -322,6 +425,65 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/summarize-content' \
   -H 'Content-Type: application/json' \
   -d '{"text": "Sample content to summarize"}'
 ```
+
+## 👥 Team Roles
+
+ExHub was built by a dedicated team of developers, designers, and education specialists:
+
+### Development Team
+
+**Frontend Development**
+- **Lead Frontend Engineer**: React architecture, component library, PWA implementation
+- **UI/UX Developer**: Design system, responsive layouts, accessibility features
+- **State Management Specialist**: TanStack Query integration, optimistic updates, caching strategies
+
+**Backend Development**
+- **Backend Lead**: Supabase architecture, database schema design, RLS policies
+- **Edge Functions Engineer**: Serverless API endpoints, AI integration, third-party services
+- **DevOps Engineer**: CI/CD pipelines, deployment automation, monitoring setup
+
+**AI & Data**
+- **AI Integration Specialist**: OpenAI integration, prompt engineering, content generation optimization
+- **Data Analyst**: Learning analytics, performance tracking, usage insights
+- **ML Engineer**: Spaced repetition algorithms, adaptive difficulty systems
+
+### Design & Product
+
+**Product Team**
+- **Product Manager**: Feature prioritization, roadmap planning, stakeholder communication
+- **UX Researcher**: User testing, feedback analysis, usability improvements
+- **Product Designer**: User flows, wireframes, prototype creation
+
+**Visual Design**
+- **Lead Designer**: Brand identity, color system, typography, icon design
+- **Motion Designer**: Animations, micro-interactions, loading states
+
+### Quality & Documentation
+
+**QA Team**
+- **QA Lead**: Test strategy, manual testing, bug triage
+- **Test Automation Engineer**: E2E tests, integration tests, CI/CD test automation
+
+**Technical Writing**
+- **Documentation Lead**: API documentation, setup guides, architecture docs
+- **Content Writer**: User guides, tooltips, help articles
+
+### Education & Community
+
+**Educational Content**
+- **Learning Experience Designer**: Pedagogical approach, onboarding flow, gamification strategy
+- **Content Strategist**: Study material curation, community guidelines
+
+**Community Management**
+- **Community Manager**: User support, Discord moderation, feedback collection
+- **Developer Advocate**: Open source contributions, developer relations
+
+### Project Leadership
+
+**Executive Team**
+- **Project Lead**: Overall vision, strategic direction, resource allocation
+- **Tech Lead**: Technical architecture decisions, code review, best practices
+- **Design Lead**: Design system oversight, brand consistency, design review
 
 ## 🔗 Additional Resources
 
