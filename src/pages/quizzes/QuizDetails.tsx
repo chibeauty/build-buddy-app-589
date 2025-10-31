@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ShareContentDialog } from "@/components/community/ShareContentDialog";
 
 interface Quiz {
   id: string;
@@ -25,6 +26,7 @@ export default function QuizDetails() {
   const { toast } = useToast();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -124,7 +126,7 @@ export default function QuizDetails() {
                 <Play className="mr-2 h-5 w-5" />
                 Start Quiz
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={() => setShareDialogOpen(true)}>
                 <Share2 className="h-5 w-5" />
               </Button>
             </div>
@@ -141,6 +143,14 @@ export default function QuizDetails() {
             </div>
           </CardContent>
         </Card>
+
+        <ShareContentDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          contentType="quiz"
+          contentId={id!}
+          contentTitle={quiz.title}
+        />
       </div>
     </MainLayout>
   );

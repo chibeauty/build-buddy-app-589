@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ShareContentDialog } from "@/components/community/ShareContentDialog";
 
 interface FlashcardDeck {
   id: string;
@@ -24,6 +25,7 @@ export default function DeckDetails() {
   const { toast } = useToast();
   const [deck, setDeck] = useState<FlashcardDeck | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -110,7 +112,7 @@ export default function DeckDetails() {
               <Button variant="outline" size="lg">
                 <Edit className="h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={() => setShareDialogOpen(true)}>
                 <Share2 className="h-5 w-5" />
               </Button>
             </div>
@@ -130,6 +132,14 @@ export default function DeckDetails() {
             </div>
           </CardContent>
         </Card>
+
+        <ShareContentDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          contentType="flashcard_deck"
+          contentId={id!}
+          contentTitle={deck.title}
+        />
       </div>
     </MainLayout>
   );
