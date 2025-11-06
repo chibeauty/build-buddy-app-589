@@ -18,6 +18,12 @@ npm run dev
 
 Visit `[http://localhost:5173](https://build-buddy-app-589.lovable.app/?utm_source=lovable-editor)` to see the app running.
 
+## 🔗 Quick Links
+
+- **[Live App](https://build-buddy-app-589.lovable.app/)** - Try ExHub now
+- **[Pitch Deck](https://gamma.app/docs/ExHub-AI-Powered-Learning-Revolution-77chnkfwihdx81m)** - Project overview and vision
+- **[Video Demo](https://drive.google.com/file/d/1Yu5LXsx-fB_6uRn_-fTffiinxvZPX1uq/view?usp=drivesdk)** - See ExHub in action
+
 ## 📚 Documentation
 
 Comprehensive documentation is available in the `/docs` folder:
