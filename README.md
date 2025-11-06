@@ -21,7 +21,7 @@ Visit `[http://localhost:5173](https://build-buddy-app-589.lovable.app/?utm_sour
 ## 🔗 Quick Links
 
 - **[Live App](https://build-buddy-app-589.lovable.app/)** - Try ExHub now
-- **[Pitch Deck](https://gamma.app/docs/ExHub-AI-Powered-Learning-Revolution-77chnkfwihdx81m)** - Project overview and vision
+- **[Pitch Deck](https://exhub-ai-powered-learnin-ddlda4j.gamma.site/)** - Project overview and vision
 - **[Video Demo](https://drive.google.com/file/d/1Yu5LXsx-fB_6uRn_-fTffiinxvZPX1uq/view?usp=drivesdk)** - See ExHub in action
 
 ## 📚 Documentation
