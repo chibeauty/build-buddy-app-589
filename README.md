@@ -432,64 +432,28 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/summarize-content' \
   -d '{"text": "Sample content to summarize"}'
 ```
 
-## 👥 Team Roles
+## 👥 ExHub App Team
 
-ExHub was built by a dedicated team of developers, designers, and education specialists:
+**Gloria Ngwu**  
+AI Engineer – Leading the design of intelligent learning algorithms and seamless GPT-4o integration pipelines that power adaptive education.
 
-### Development Team
+**Rachael Kiarie**  
+AI Engineer – Building the adaptive personalization engine and AI-driven content generation systems to enhance user engagement and learning outcomes.
 
-**Frontend Development**
-- **Lead Frontend Engineer**: React architecture, component library, PWA implementation
-- **UI/UX Developer**: Design system, responsive layouts, accessibility features
-- **State Management Specialist**: TanStack Query integration, optimistic updates, caching strategies
+**Fortune Obidimalor**  
+Backend Developer – Architecting scalable Supabase databases, APIs, and secure backend services for high-performance data management.
 
-**Backend Development**
-- **Backend Lead**: Supabase architecture, database schema design, RLS policies
-- **Edge Functions Engineer**: Serverless API endpoints, AI integration, third-party services
-- **DevOps Engineer**: CI/CD pipelines, deployment automation, monitoring setup
+**Ukpai Amarachi**  
+Frontend Developer – Developing a responsive React Progressive Web App (PWA) with intuitive UI/UX designs for smooth and accessible user interactions.
 
-**AI & Data**
-- **AI Integration Specialist**: OpenAI integration, prompt engineering, content generation optimization
-- **Data Analyst**: Learning analytics, performance tracking, usage insights
-- **ML Engineer**: Spaced repetition algorithms, adaptive difficulty systems
+**Adeboyeku Enioluwafe**  
+Mobile Developer – Enhancing cross-platform mobile performance and integrating native features for an optimized app experience on Android and iOS.
 
-### Design & Product
+### 🌍 About the Team
 
-**Product Team**
-- **Product Manager**: Feature prioritization, roadmap planning, stakeholder communication
-- **UX Researcher**: User testing, feedback analysis, usability improvements
-- **Product Designer**: User flows, wireframes, prototype creation
+The ExHub App Team is a multidisciplinary group of engineers and innovators dedicated to reimagining how learners interact with AI-powered education tools. Together, we combine expertise in artificial intelligence, full-stack development, and educational technology (EdTech) to create an intelligent learning ecosystem that is personalized, scalable, and accessible to all.
 
-**Visual Design**
-- **Lead Designer**: Brand identity, color system, typography, icon design
-- **Motion Designer**: Animations, micro-interactions, loading states
-
-### Quality & Documentation
-
-**QA Team**
-- **QA Lead**: Test strategy, manual testing, bug triage
-- **Test Automation Engineer**: E2E tests, integration tests, CI/CD test automation
-
-**Technical Writing**
-- **Documentation Lead**: API documentation, setup guides, architecture docs
-- **Content Writer**: User guides, tooltips, help articles
-
-### Education & Community
-
-**Educational Content**
-- **Learning Experience Designer**: Pedagogical approach, onboarding flow, gamification strategy
-- **Content Strategist**: Study material curation, community guidelines
-
-**Community Management**
-- **Community Manager**: User support, Discord moderation, feedback collection
-- **Developer Advocate**: Open source contributions, developer relations
-
-### Project Leadership
-
-**Executive Team**
-- **Project Lead**: Overall vision, strategic direction, resource allocation
-- **Tech Lead**: Technical architecture decisions, code review, best practices
-- **Design Lead**: Design system oversight, brand consistency, design review
+Our collective mission is to democratize personalized learning through advanced technology, empowering students and professionals worldwide to learn smarter, faster, and more effectively.
 
 ## 🔗 Additional Resources
 
