@@ -435,19 +435,13 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/summarize-content' \
 ## 👥 ExHub App Team
 
 **Gloria Ngwu**  
+Frontend Developer – Developing a responsive React Progressive Web App (PWA) with intuitive UI/UX designs for smooth and accessible user interactions.
 AI Engineer – Leading the design of intelligent learning algorithms and seamless GPT-4o integration pipelines that power adaptive education.
 
+
 **Rachael Kiarie**  
-AI Engineer – Building the adaptive personalization engine and AI-driven content generation systems to enhance user engagement and learning outcomes.
-
-**Fortune Obidimalor**  
 Backend Developer – Architecting scalable Supabase databases, APIs, and secure backend services for high-performance data management.
-
-**Ukpai Amarachi**  
-Frontend Developer – Developing a responsive React Progressive Web App (PWA) with intuitive UI/UX designs for smooth and accessible user interactions.
-
-**Adeboyeku Enioluwafe**  
-Mobile Developer – Enhancing cross-platform mobile performance and integrating native features for an optimized app experience on Android and iOS.
+AI Engineer – Building the adaptive personalization engine and AI-driven content generation systems to enhance user engagement and learning outcomes.
 
 ### 🌍 About the Team
 
